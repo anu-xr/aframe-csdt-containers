@@ -3,22 +3,21 @@
   <head>
     <meta charset="utf-8" />
     <title>Example</title>
-    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+    <script src="./aframe.js"></script>
     <script src="../dist/export.js"></script>
   </head>
 
   <body>
     <a-scene>
-      <!--Camera
+      <!--Camera-->
       <a-entity
         id="player"
-        position="0 1.6 0"
+        position="0 1.6 3"
         camera
         wasd-controls="acceleration: 15;"
         look-controls="pointerLockEnabled: false"
       >
-        <a-cursor position="0 0 -.05" scale=".04 .04 1"></a-cursor>
-      </a-entity>-->
+      </a-entity>
 
       <!--CSDT Receiver-->
       <a-entity csdt-container-receiver></a-entity>

@@ -1,5 +1,4 @@
 import { CSDTParent } from './lib/csdt/export';
-import { deepRemoveTypes } from './utils';
 
 AFRAME.registerComponent('csdt-container', {
   schema: {
@@ -16,12 +15,17 @@ AFRAME.registerComponent('csdt-container', {
     el.has_iframe_loaded = false;
     el.connection_established = false;
 
+    //create container mesh
+    const geometry = new THREE.BoxBufferGeometry(data.width, data.height, data.depth);
+    const material = new THREE.MeshBasicMaterial({ colorWrite: false, side: THREE.DoubleSide });
+    const mesh = new THREE.Mesh(geometry, material);
+
+    el.object3D.add(mesh);
+
     //create iframe
-    const iframe = document.createElement('iframe');
+    const iframe = (el.iframe = document.createElement('iframe'));
     iframe.src = data.href;
-    iframe.style.display = 'none';
     document.body.appendChild(iframe);
-    el.iframe = iframe;
 
     const CSDT = (el.CSDT = new CSDTParent(iframe));
 
@@ -30,8 +34,16 @@ AFRAME.registerComponent('csdt-container', {
       iframe.addEventListener('load', () => {
         //check for CSDT support
         CSDT.ping().then(() => {
+          const ydoc = CSDT.ydoc;
+          const ymap = ydoc.getMap('container');
+
+          ydoc.transact(() => {
+            ymap.set('renderWidth', window.innerWidth);
+            ymap.set('renderHeight', window.innerHeight);
+          });
+
           //open a connection
-          CSDT.openConnection().then((d) => {
+          CSDT.openConnection('container').then((d) => {
             if (d.connectionEstablished === true) {
               el.connection_established = true;
             }
@@ -43,8 +55,6 @@ AFRAME.registerComponent('csdt-container', {
 
   tick: function () {
     const el = this.el;
-    const data = this.data;
-    const sceneEl = el.sceneEl;
 
     if (el.has_iframe_loaded === false) {
       if (el.iframe?.contentDocument) {
@@ -54,12 +64,71 @@ AFRAME.registerComponent('csdt-container', {
     }
 
     if (el.connection_established === true) {
-      //calculate container area
-      const renderer = sceneEl.renderer;
+      const camera = el.sceneEl.camera;
+
+      const ydoc = el.CSDT.ydoc;
+      const ymap = ydoc.getMap('container');
+
+      ydoc.transact(() => {
+        ymap.set('cameraMatrixWorld', camera.matrixWorld.toArray());
+        ymap.set('cameraViewMatrix', camera.matrixWorldInverse.toArray());
+      });
+      //tell child site rendering is starting
+      el.CSDT.dispatchEvent('CSDT-tick');
     }
   },
-});
 
-function log(msg, probability = 0.97) {
-  if (Math.random() > probability) console.log(msg);
-}
+  tock: function () {
+    const el = this.el;
+    if (el.connection_established !== true) return;
+    const ydoc = el.CSDT.ydoc;
+    const ymap = ydoc.getMap('container');
+
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+
+    //read pixel data from child site
+    const pixels = ymap.get('childPixels');
+    const texture = new THREE.DataTexture(
+      pixels,
+      width,
+      height,
+      THREE.RGBAFormat,
+      THREE.UnsignedByteType,
+      THREE.UVMapping
+    );
+
+    const geometry = new THREE.PlaneGeometry(width, height);
+    const material = new THREE.MeshBasicMaterial({ transparent: true, map: texture });
+    const plane = new THREE.Mesh(geometry, material);
+
+    const camera = el.sceneEl.camera;
+    const renderer = el.sceneEl.renderer;
+    const gl = renderer.getContext('webgl2', { preserveDrawingBuffer: true });
+
+    renderer.autoClear = false;
+
+    //render container into stencil buffer
+    gl.enable(gl.STENCIL_TEST);
+    gl.stencilOp(gl.KEEP, gl.KEEP, gl.REPLACE);
+    gl.stencilFunc(gl.ALWAYS, 1, 0xff);
+    gl.stencilMask(0xff);
+
+    renderer.render(new THREE.Scene().add(el.object3D), camera);
+
+    //render pixel data, using the stencil buffer as a mask
+    renderer.clearDepth();
+    gl.stencilFunc(gl.EQUAL, 1, 0xff);
+    gl.stencilMask(0x00);
+
+    const orthoCamera = new THREE.OrthographicCamera(width / -2, width / 2, height / 2, height / -2, 1, 1000);
+    orthoCamera.position.z = 5;
+    const tmpScene = new THREE.Scene();
+    tmpScene.add(plane);
+    tmpScene.add(orthoCamera);
+    renderer.render(tmpScene, orthoCamera);
+
+    gl.stencilMask(0xff);
+    gl.disable(gl.STENCIL_TEST);
+  },
+});

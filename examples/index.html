@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <title>Example</title>
-    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+    <script src="./aframe.js"></script>
     <script src="../dist/export.js"></script>
   </head>
 
@@ -12,7 +12,7 @@
       <!--Camera-->
       <a-entity
         id="player"
-        position="0 1.6 0"
+        position="0 1.6 3"
         camera
         wasd-controls="acceleration: 12;"
         look-controls="pointerLockEnabled: false"
@@ -21,7 +21,7 @@
       </a-entity>
 
       <!--Container-->
-      <a-entity position="-3 1.2 -6" csdt-container="href: page2.html"></a-entity>
+      <a-entity position="-8 5.001 0" csdt-container="href: page2.html"></a-entity>
 
       <!--Environment-->
       <a-sky color="#aff"></a-sky>

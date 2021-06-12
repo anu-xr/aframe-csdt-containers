@@ -140,9 +140,9 @@
       this[globalName] = mainExports;
     }
   }
-})({"i9R94":[function(require,module,exports) {
+})({"3ydNP":[function(require,module,exports) {
 var HMR_HOST = null;
-var HMR_PORT = 53213;
+var HMR_PORT = 1234;
 var HMR_SECURE = false;
 var HMR_ENV_HASH = "d751713988987e9331980363e24189ce";
 module.bundle.HMR_BUNDLE_ID = "dcd721b617217ecd3e90b74d2c08edc6";
@@ -447,7 +447,6 @@ require('./csdt-container-receiver');
 
 },{"./csdt-container":"PPNTz","./csdt-container-receiver":"6BgQA"}],"PPNTz":[function(require,module,exports) {
 var _libCsdtExport = require('./lib/csdt/export');
-require('./utils');
 AFRAME.registerComponent('csdt-container', {
   schema: {
     href: {
@@ -468,20 +467,32 @@ AFRAME.registerComponent('csdt-container', {
     const data = this.data;
     el.has_iframe_loaded = false;
     el.connection_established = false;
+    // create container mesh
+    const geometry = new THREE.BoxBufferGeometry(data.width, data.height, data.depth);
+    const material = new THREE.MeshBasicMaterial({
+      colorWrite: false,
+      side: THREE.DoubleSide
+    });
+    const mesh = new THREE.Mesh(geometry, material);
+    el.object3D.add(mesh);
     // create iframe
-    const iframe = document.createElement('iframe');
+    const iframe = el.iframe = document.createElement('iframe');
     iframe.src = data.href;
-    iframe.style.display = 'none';
     document.body.appendChild(iframe);
-    el.iframe = iframe;
     const CSDT = el.CSDT = new _libCsdtExport.CSDTParent(iframe);
     // wait for iframe to fully load
     el.addEventListener('iframe loaded', () => {
       iframe.addEventListener('load', () => {
         // check for CSDT support
         CSDT.ping().then(() => {
+          const ydoc = CSDT.ydoc;
+          const ymap = ydoc.getMap('container');
+          ydoc.transact(() => {
+            ymap.set('renderWidth', window.innerWidth);
+            ymap.set('renderHeight', window.innerHeight);
+          });
           // open a connection
-          CSDT.openConnection().then(d => {
+          CSDT.openConnection('container').then(d => {
             if (d.connectionEstablished === true) {
               el.connection_established = true;
             }
@@ -492,8 +503,6 @@ AFRAME.registerComponent('csdt-container', {
   },
   tick: function () {
     const el = this.el;
-    const data = this.data;
-    const sceneEl = el.sceneEl;
     if (el.has_iframe_loaded === false) {
       if (el.iframe?.contentDocument) {
         el.has_iframe_loaded = true;
@@ -501,16 +510,61 @@ AFRAME.registerComponent('csdt-container', {
       }
     }
     if (el.connection_established === true) {
-      // calculate container area
-      const renderer = sceneEl.renderer;
+      const camera = el.sceneEl.camera;
+      const ydoc = el.CSDT.ydoc;
+      const ymap = ydoc.getMap('container');
+      ydoc.transact(() => {
+        ymap.set('cameraMatrixWorld', camera.matrixWorld.toArray());
+        ymap.set('cameraViewMatrix', camera.matrixWorldInverse.toArray());
+      });
+      // tell child site rendering is starting
+      el.CSDT.dispatchEvent('CSDT-tick');
     }
+  },
+  tock: function () {
+    const el = this.el;
+    if (el.connection_established !== true) return;
+    const ydoc = el.CSDT.ydoc;
+    const ymap = ydoc.getMap('container');
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    // read pixel data from child site
+    const pixels = ymap.get('childPixels');
+    const texture = new THREE.DataTexture(pixels, width, height, THREE.RGBAFormat, THREE.UnsignedByteType, THREE.UVMapping);
+    const geometry = new THREE.PlaneGeometry(width, height);
+    const material = new THREE.MeshBasicMaterial({
+      transparent: true,
+      map: texture
+    });
+    const plane = new THREE.Mesh(geometry, material);
+    const camera = el.sceneEl.camera;
+    const renderer = el.sceneEl.renderer;
+    const gl = renderer.getContext('webgl2', {
+      preserveDrawingBuffer: true
+    });
+    renderer.autoClear = false;
+    // render container into stencil buffer
+    gl.enable(gl.STENCIL_TEST);
+    gl.stencilOp(gl.KEEP, gl.KEEP, gl.REPLACE);
+    gl.stencilFunc(gl.ALWAYS, 1, 0xff);
+    gl.stencilMask(0xff);
+    renderer.render(new THREE.Scene().add(el.object3D), camera);
+    // render pixel data, using the stencil buffer as a mask
+    renderer.clearDepth();
+    gl.stencilFunc(gl.EQUAL, 1, 0xff);
+    gl.stencilMask(0x00);
+    const orthoCamera = new THREE.OrthographicCamera(width / -2, width / 2, height / 2, height / -2, 1, 1000);
+    orthoCamera.position.z = 5;
+    const tmpScene = new THREE.Scene();
+    tmpScene.add(plane);
+    tmpScene.add(orthoCamera);
+    renderer.render(tmpScene, orthoCamera);
+    gl.stencilMask(0xff);
+    gl.disable(gl.STENCIL_TEST);
   }
 });
-function log(msg, probability = 0.97) {
-  if (Math.random() > probability) console.log(msg);
-}
 
-},{"./lib/csdt/export":"27RSa","./utils":"3EQWo"}],"27RSa":[function(require,module,exports) {
+},{"./lib/csdt/export":"27RSa"}],"27RSa":[function(require,module,exports) {
 var global = arguments[3];
 var define;
 // modules are defined as an array
@@ -961,6 +1015,12 @@ var define;
           });
           this.iframe.contentDocument.dispatchEvent(event);
         });
+      }
+      dispatchEvent(text, data) {
+        const event = new CustomEvent(text, {
+          detail: data
+        });
+        this.iframe.contentDocument.dispatchEvent(event);
       }
     }
   }, {
@@ -16802,126 +16862,54 @@ var define;
   }]
 }, ["3ydNP", "556pz"], "556pz", "parcelRequirecf62");
 
-},{}],"3EQWo":[function(require,module,exports) {
-var _parcelHelpers = require("@parcel/transformer-js/lib/esmodule-helpers.js");
-_parcelHelpers.defineInteropFlag(exports);
-_parcelHelpers.export(exports, "deepSearchForTypes", function () {
-  return deepSearchForTypes;
-});
-_parcelHelpers.export(exports, "deepRemoveTypes", function () {
-  return deepRemoveTypes;
-});
-_parcelHelpers.export(exports, "deepRemoveIds", function () {
-  return deepRemoveIds;
-});
-function deepSearchForTypes(obj, types) {
-  const found = [];
-  if (types.includes(obj.type)) found.push(obj);
-  if (obj.children.length > 0) {
-    obj.children.forEach(child => found.push(...deepSearchForTypes(child, types)));
-  }
-  return found;
-}
-function deepRemoveTypes(obj, types, includeObj = false) {
-  const removed = [];
-  if (includeObj == true) {
-    if (types.includes(obj.type)) {
-      removed.push(obj);
-      return [undefined, removed];
-    }
-  }
-  if (obj.children.length > 0) {
-    obj.children.forEach(child => {
-      const [cObj, cRemoved] = deepRemoveTypes(child, types, true);
-      removed.push(...cRemoved);
-      if (!cObj) obj.remove(child);
-    });
-  }
-  return [obj, removed];
-}
-function deepRemoveIds(obj, ids, includeObj = false) {
-  const removed = [];
-  if (includeObj == true) {
-    if (obj.el) {
-      if (ids.includes(obj.el.id)) {
-        removed.push(obj);
-        return [undefined, removed];
-      }
-    }
-  }
-  if (obj.children.length > 0) {
-    obj.children.forEach(child => {
-      const [cObj, cRemoved] = deepRemoveIds(child, ids, true);
-      removed.push(...cRemoved);
-      if (!cObj) obj.remove(child);
-    });
-  }
-  return [obj, removed];
-}
-
-},{"@parcel/transformer-js/lib/esmodule-helpers.js":"5gA8y"}],"5gA8y":[function(require,module,exports) {
-"use strict";
-
-exports.interopDefault = function (a) {
-  return a && a.__esModule ? a : {
-    default: a
-  };
-};
-
-exports.defineInteropFlag = function (a) {
-  Object.defineProperty(a, '__esModule', {
-    value: true
-  });
-};
-
-exports.exportAll = function (source, dest) {
-  Object.keys(source).forEach(function (key) {
-    if (key === 'default' || key === '__esModule') {
-      return;
-    } // Skip duplicate re-exports when they have the same value.
-
-
-    if (key in dest && dest[key] === source[key]) {
-      return;
-    }
-
-    Object.defineProperty(dest, key, {
-      enumerable: true,
-      get: function () {
-        return source[key];
-      }
-    });
-  });
-  return dest;
-};
-
-exports.export = function (dest, destName, get) {
-  Object.defineProperty(dest, destName, {
-    enumerable: true,
-    get: get
-  });
-};
 },{}],"6BgQA":[function(require,module,exports) {
 var _libCsdtExport = require('./lib/csdt/export');
-require('./utils');
 AFRAME.registerComponent('csdt-container-receiver', {
   schema: {},
   init: function () {
     const el = this.el;
-    const data = this.data;
+    const renderer = el.sceneEl.renderer;
     el.connection_opened = false;
     const CSDT = el.CSDT = new _libCsdtExport.CSDTChild();
     document.addEventListener('CSDT-connection-open', e => {
       el.connection_opened = true;
       CSDT.responseConnectionOpen(true);
+      const ydoc = CSDT.ydoc;
+      const ymap = ydoc.getMap('container');
+      el.renderWidth = ymap.get('renderWidth') || 512;
+      el.renderHeight = ymap.get('renderHeight') || 512;
+      // set render target
+      // the scene will now render to renderTarget, rather than the canvas
+      el.renderTarget = new THREE.WebGLRenderTarget(el.renderWidth, el.renderHeight);
+      renderer.setRenderTarget(el.renderTarget);
+      el.pixels = new Uint8Array(el.renderWidth * el.renderHeight * 4);
+      document.addEventListener('CSDT-tick', () => {
+        ydoc.transact(() => {
+          ymap.set('childPixels', el.pixels);
+        });
+      });
     });
+  },
+  tick: function () {
+    const el = this.el;
+    if (el.connection_opened !== true) return;
+    const ydoc = el.CSDT.ydoc;
+    const ymap = ydoc.getMap('container');
+    const cameraMatrixWorld = new THREE.Matrix4().fromArray(ymap.get('cameraMatrixWorld'));
+    const cameraViewMatrix = new THREE.Matrix4().fromArray(ymap.get('cameraViewMatrix'));
+    const camera = el.sceneEl.camera;
+    // camera.matrixAutoUpdate = false;
+    camera.matrixWorld = cameraMatrixWorld;
+    camera.matrixWorldInverse = cameraMatrixWorld;
   },
   tock: function () {
     const el = this.el;
-    if (el.connection_opened === true) {}
+    const renderer = el.sceneEl.renderer;
+    if (el.connection_opened !== true) return;
+    renderer.readRenderTargetPixels(el.renderTarget, 0, 0, el.renderWidth, el.renderHeight, el.pixels);
   }
 });
 
-},{"./lib/csdt/export":"27RSa","./utils":"3EQWo"}]},["i9R94","556pz"], "556pz", "parcelRequiree5e3")
+},{"./lib/csdt/export":"27RSa"}]},["3ydNP","556pz"], "556pz", "parcelRequiree5e3")
 
 //# sourceMappingURL=export.js.map

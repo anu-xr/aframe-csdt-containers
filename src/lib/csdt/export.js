@@ -495,6 +495,12 @@ class CSDTParent extends _baseDefault.default {
       this.iframe.contentDocument.dispatchEvent(event);
     });
   }
+  dispatchEvent(text, data) {
+    const event = new CustomEvent(text, {
+      detail: data
+    });
+    this.iframe.contentDocument.dispatchEvent(event);
+  }
 }
 
 },{"./base":"8wNTG","@parcel/transformer-js/lib/esmodule-helpers.js":"5gA8y"}],"8wNTG":[function(require,module,exports) {
