@@ -1,0 +1,27 @@
+{
+  "name": "aframe-csdt-container",
+  "version": "0.1.0",
+  "homepage": "https://github.com/open-hubs/aframe-csdt-container",
+  "description": "An aframe component for loading instances of other sites using CSDT.",
+  "repository": "https://github.com/open-hubs/aframe-csdt-container",
+  "author": "open-hubs",
+  "license": "GPL-3.0-or-later",
+  "files": [
+    "dist/*.js*"
+  ],
+  "peerDependencies": {
+    "aframe": "*"
+  },
+  "devDependencies": {
+    "parcel": "*"
+  },
+  "scripts": {
+    "build": "parcel build src/export.js",
+    "dev": "parcel watch src/export.js"
+  },
+  "keywords": [
+    "aframe",
+    "a-frame",
+    "csdt"
+  ]
+}
