@@ -18,6 +18,10 @@ AFRAME.registerComponent('csdt-container-receiver', {
       el.connection_opened = true;
       CSDT.responseConnectionOpen(true);
 
+      //disable aframe's render loop
+      //we sync our render with the parent site, rather than using a separate clock
+      el.sceneEl.renderer.setAnimationLoop(null);
+
       const ydoc = CSDT.ydoc;
       const ymap = ydoc.getMap('container');
 
@@ -46,9 +50,6 @@ AFRAME.registerComponent('csdt-container-receiver', {
         });
       });
 
-      //disable aframe's render loop
-      el.sceneEl.renderer.setAnimationLoop(null);
-
       document.addEventListener('CSDT-tock', () => {
         const el = this.el;
         const sceneEl = el.sceneEl;
@@ -68,26 +69,7 @@ AFRAME.registerComponent('csdt-container-receiver', {
         camera.quaternion.set(quat.x, quat.y, quat.z, quat.w);
 
         //render the scene
-        //taken from https://github.com/aframevr/aframe/blob/b164623dfa0d2548158f4b7da06157497cd4ea29/src/core/scene/a-scene.js#L782
-        //we do it here to sync our render with the parent site
-        {
-          const delta = sceneEl.clock.getDelta() * 1000;
-          const time = sceneEl.clock.elapsedTime * 1000;
-
-          if (sceneEl.isPlaying) sceneEl.tick(time, delta);
-
-          var savedBackground = null;
-          if (sceneEl.is('ar-mode')) {
-            // In AR mode, don't render the default background. Hide it, then
-            // restore it again after rendering.
-            savedBackground = sceneEl.object3D.background;
-            sceneEl.object3D.background = null;
-          }
-
-          renderer.render(sceneEl.object3D, sceneEl.camera);
-
-          if (savedBackground) sceneEl.object3D.background = savedBackground;
-        }
+        this.renderScene();
 
         //send pixel data to parent
         renderer.readRenderTargetPixels(el.renderTarget, 0, 0, el.canvasWidth, el.canvasHeight, el.pixels);
@@ -97,5 +79,29 @@ AFRAME.registerComponent('csdt-container-receiver', {
         });
       });
     });
+  },
+
+  //taken from https://github.com/aframevr/aframe/blob/b164623dfa0d2548158f4b7da06157497cd4ea29/src/core/scene/a-scene.js#L782
+  renderScene: function () {
+    const el = this.el;
+    const sceneEl = el.sceneEl;
+    const renderer = sceneEl.renderer;
+
+    const delta = sceneEl.clock.getDelta() * 1000;
+    const time = sceneEl.clock.elapsedTime * 1000;
+
+    if (sceneEl.isPlaying) sceneEl.tick(time, delta);
+
+    var savedBackground = null;
+    if (sceneEl.is('ar-mode')) {
+      // In AR mode, don't render the default background. Hide it, then
+      // restore it again after rendering.
+      savedBackground = sceneEl.object3D.background;
+      sceneEl.object3D.background = null;
+    }
+
+    renderer.render(sceneEl.object3D, sceneEl.camera);
+
+    if (savedBackground) sceneEl.object3D.background = savedBackground;
   },
 });

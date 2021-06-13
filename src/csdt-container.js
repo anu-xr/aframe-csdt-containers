@@ -73,8 +73,8 @@ AFRAME.registerComponent('csdt-container', {
     const ydoc = el.CSDT.ydoc;
     const ymap = ydoc.getMap('container');
 
-    //if the window changes size
     if (ymap.get('canvasWidth') !== canvas.width || ymap.get('canvasHeight') !== canvas.height) {
+      //sync canvas size with child
       ydoc.transact(() => {
         ymap.set('canvasWidth', canvas.width);
         ymap.set('canvasHeight', canvas.height);
