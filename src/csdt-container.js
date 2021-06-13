@@ -73,8 +73,10 @@ AFRAME.registerComponent('csdt-container', {
 
     //if the window changes size
     if (ymap.get('canvasWidth') !== canvas.width || ymap.get('canvasHeight') !== canvas.height) {
-      ymap.set('canvasWidth', canvas.width);
-      ymap.set('canvasHeight', canvas.height);
+      ydoc.transact(() => {
+        ymap.set('canvasWidth', canvas.width);
+        ymap.set('canvasHeight', canvas.height);
+      });
 
       const geometry = new THREE.PlaneGeometry(canvas.width, canvas.height);
       const material = new THREE.MeshBasicMaterial({ transparent: true });
@@ -153,5 +155,7 @@ AFRAME.registerComponent('csdt-container', {
 
     gl.stencilMask(0xff);
     gl.disable(gl.STENCIL_TEST);
+
+    texture.dispose();
   },
 });
