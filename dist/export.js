@@ -460,6 +460,9 @@ AFRAME.registerComponent('csdt-container', {
     },
     depth: {
       default: 8
+    },
+    enableWireframe: {
+      default: false
     }
   },
   init: function () {
@@ -467,14 +470,25 @@ AFRAME.registerComponent('csdt-container', {
     const data = this.data;
     el.has_iframe_loaded = false;
     el.connection_established = false;
-    // create container mesh
-    const geometry = new THREE.BoxBufferGeometry(data.width, data.height, data.depth);
-    const material = new THREE.MeshBasicMaterial({
+    // create bounding box mesh
+    const geometry1 = new THREE.BoxBufferGeometry(data.width, data.height, data.depth);
+    const material1 = new THREE.MeshBasicMaterial({
       colorWrite: false,
       side: THREE.DoubleSide
     });
-    const mesh = new THREE.Mesh(geometry, material);
+    const mesh = new THREE.Mesh(geometry1, material1);
+    mesh.visible = false;
+    mesh.name = 'boundingBox';
     el.object3D.add(mesh);
+    // create wireframe
+    if (data.enableWireframe == true) {
+      const geometry2 = new THREE.EdgesGeometry(geometry1);
+      const material2 = new THREE.LineBasicMaterial({
+        color: '0xffffff'
+      });
+      const wireframe = new THREE.LineSegments(geometry2, material2);
+      el.object3D.add(wireframe);
+    }
     // create iframe
     const iframe = el.iframe = document.createElement('iframe');
     iframe.src = data.href;
@@ -555,7 +569,9 @@ AFRAME.registerComponent('csdt-container', {
     gl.stencilOp(gl.KEEP, gl.KEEP, gl.REPLACE);
     gl.stencilFunc(gl.ALWAYS, 1, 0xff);
     gl.stencilMask(0xff);
-    renderer.render(new THREE.Scene().add(el.object3D), camera);
+    const boundingBox = el.object3D.children.filter(c => c.name === 'boundingBox')[0].clone();
+    boundingBox.visible = true;
+    renderer.render(boundingBox, camera);
     // render pixel data, using the stencil buffer as a mask
     renderer.clearDepth();
     gl.stencilFunc(gl.EQUAL, 1, 0xff);

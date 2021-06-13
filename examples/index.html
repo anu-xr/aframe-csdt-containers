@@ -17,11 +17,13 @@
         wasd-controls="acceleration: 12;"
         look-controls="pointerLockEnabled: false"
       >
-        <a-cursor position="0 0 -.05" scale=".04 .04 1"></a-cursor>
       </a-entity>
 
       <!--Container-->
-      <a-entity position="-6 4.001 0" csdt-container="href: page2.html"></a-entity>
+      <a-entity
+        position="-6 2.001 0"
+        csdt-container="href: page2.html; width: 6; height: 4; depth: 6; enableWireframe: true"
+      ></a-entity>
 
       <!--Environment-->
       <a-sky color="#aff"></a-sky>
