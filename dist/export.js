@@ -16907,6 +16907,7 @@ AFRAME.registerComponent('csdt-container-receiver', {
       ymap.observe(e => {
         const changed = e.transaction.changed;
         changed.forEach(c => {
+          // sync canvas size with parent
           if (c.has('canvasWidth') || c.has('canvasHeight')) {
             el.canvasWidth = ymap.get('canvasWidth');
             el.canvasHeight = ymap.get('canvasHeight');
@@ -16918,9 +16919,12 @@ AFRAME.registerComponent('csdt-container-receiver', {
           }
         });
       });
+      // disable aframe's render loop
+      el.sceneEl.renderer.setAnimationLoop(null);
       document.addEventListener('CSDT-tock', () => {
         const el = this.el;
-        const renderer = el.sceneEl.renderer;
+        const sceneEl = el.sceneEl;
+        const renderer = sceneEl.renderer;
         const ydoc = el.CSDT.ydoc;
         const ymap = ydoc.getMap('container');
         // get camera data from parent
@@ -16931,7 +16935,23 @@ AFRAME.registerComponent('csdt-container-receiver', {
         player.position.set(pos.x, pos.y, pos.z);
         camera.quaternion.set(quat.x, quat.y, quat.z, quat.w);
         // render the scene
-        renderer.render(el.sceneEl.object3D, camera);
+        // taken from https://github.com/aframevr/aframe/blob/b164623dfa0d2548158f4b7da06157497cd4ea29/src/core/scene/a-scene.js#L782
+        // we do it here to sync our render with the parent site
+        {
+          const delta = sceneEl.clock.getDelta() * 1000;
+          const time = sceneEl.clock.elapsedTime * 1000;
+          if (sceneEl.isPlaying) sceneEl.tick(time, delta);
+          var savedBackground = null;
+          if (sceneEl.is('ar-mode')) {
+            // In AR mode, don't render the default background. Hide it, then
+            // restore it again after rendering.
+            savedBackground = sceneEl.object3D.background;
+            sceneEl.object3D.background = null;
+          }
+          renderer.render(sceneEl.object3D, sceneEl.camera);
+          if (savedBackground) sceneEl.object3D.background = savedBackground;
+                  // send pixel data to parent
+}
         // send pixel data to parent
         renderer.readRenderTargetPixels(el.renderTarget, 0, 0, el.canvasWidth, el.canvasHeight, el.pixels);
         ydoc.transact(() => {
