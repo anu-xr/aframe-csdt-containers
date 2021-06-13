@@ -463,11 +463,15 @@ AFRAME.registerComponent('csdt-container', {
     },
     enableWireframe: {
       default: false
+    },
+    frameSkips: {
+      default: 2
     }
   },
   init: function () {
     const el = this.el;
     const data = this.data;
+    el.frames = 0;
     el.has_iframe_loaded = false;
     el.connection_established = false;
     // create bounding box mesh
@@ -548,8 +552,12 @@ AFRAME.registerComponent('csdt-container', {
   },
   tock: function () {
     const el = this.el;
+    const data = this.data;
     if (el.connection_established !== true) return;
-    el.CSDT.dispatchEvent('CSDT-tock');
+    if (++el.frames % data.frameSkips === 0) {
+      // render the child site
+      el.CSDT.dispatchEvent('CSDT-tock');
+    }
     const ydoc = el.CSDT.ydoc;
     const ymap = ydoc.getMap('container');
     const canvas = el.sceneEl.canvas;
