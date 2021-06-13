@@ -47,16 +47,14 @@ AFRAME.registerComponent('csdt-container', {
     const CSDT = (el.CSDT = new CSDTParent(iframe));
 
     //wait for iframe to fully load
-    el.addEventListener('iframe loaded', () => {
-      iframe.addEventListener('load', () => {
-        //check for CSDT support
-        CSDT.ping().then(() => {
-          //open a connection
-          CSDT.openConnection('container').then((d) => {
-            if (d.connectionEstablished === true) {
-              el.connection_established = true;
-            }
-          });
+    iframe.addEventListener('load', () => {
+      //check for CSDT support
+      CSDT.ping().then(() => {
+        //open a connection
+        CSDT.openConnection('container').then((d) => {
+          if (d.connectionEstablished === true) {
+            el.connection_established = true;
+          }
         });
       });
     });
@@ -65,52 +63,40 @@ AFRAME.registerComponent('csdt-container', {
   tick: function () {
     const el = this.el;
     const data = this.data;
+    if (el.connection_established !== true) return;
 
-    if (el.has_iframe_loaded === false) {
-      if (el.iframe?.contentDocument) {
-        el.has_iframe_loaded = true;
-        el.emit('iframe loaded');
-      }
+    const camera = el.sceneEl.camera;
+    const canvas = el.sceneEl.canvas;
+
+    const ydoc = el.CSDT.ydoc;
+    const ymap = ydoc.getMap('container');
+
+    //if the window changes size
+    if (ymap.get('canvasWidth') !== canvas.width || ymap.get('canvasHeight') !== canvas.height) {
+      ymap.set('canvasWidth', canvas.width);
+      ymap.set('canvasHeight', canvas.height);
+
+      const geometry = new THREE.PlaneGeometry(canvas.width, canvas.height);
+      const material = new THREE.MeshBasicMaterial({ transparent: true });
+      el.renderingPlane = new THREE.Mesh(geometry, material);
     }
 
-    if (el.connection_established === true) {
-      const camera = el.sceneEl.camera;
-      const canvas = el.sceneEl.canvas;
+    const camPos = camera.getWorldPosition(new THREE.Vector3());
+    const camQuat = camera.getWorldQuaternion(new THREE.Quaternion());
 
-      const ydoc = el.CSDT.ydoc;
-      const ymap = ydoc.getMap('container');
+    const containerPos = el.object3D.getWorldPosition(new THREE.Vector3());
+    containerPos.y -= data.height / 2;
 
-      if (ymap.get('renderWidth') !== canvas.width) {
-        ymap.set('renderWidth', canvas.width);
+    //center child on the container
+    camPos.sub(containerPos);
 
-        const geometry = new THREE.PlaneGeometry(canvas.width, canvas.height);
-        const material = new THREE.MeshBasicMaterial({ transparent: true });
-        el.renderingPlane = new THREE.Mesh(geometry, material);
-      }
-      if (ymap.get('renderHeight') !== canvas.height) {
-        ymap.set('renderHeight', canvas.height);
+    //send info to child site
+    ydoc.transact(() => {
+      ymap.set('cameraPosition', camPos.toArray());
+      ymap.set('cameraQuaternion', camQuat.toArray());
+    });
 
-        const geometry = new THREE.PlaneGeometry(canvas.width, canvas.height);
-        const material = new THREE.MeshBasicMaterial({ transparent: true });
-        el.renderingPlane = new THREE.Mesh(geometry, material);
-      }
-
-      const camPos = camera.getWorldPosition(new THREE.Vector3());
-      const camQuat = camera.getWorldQuaternion(new THREE.Quaternion());
-
-      const containerPos = el.object3D.getWorldPosition(new THREE.Vector3());
-      containerPos.y -= data.height / 2;
-
-      camPos.sub(containerPos);
-
-      //send info to child site
-      ydoc.transact(() => {
-        ymap.set('cameraPosition', camPos.toArray());
-        ymap.set('cameraQuaternion', camQuat.toArray());
-      });
-
-      el.CSDT.dispatchEvent('CSDT-tick');
-    }
+    el.CSDT.dispatchEvent('CSDT-tick');
   },
 
   tock: function () {

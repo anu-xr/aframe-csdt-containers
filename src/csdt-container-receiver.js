@@ -21,25 +21,25 @@ AFRAME.registerComponent('csdt-container-receiver', {
       const ydoc = CSDT.ydoc;
       const ymap = ydoc.getMap('container');
 
-      el.renderWidth = ymap.get('renderWidth') || 512;
-      el.renderHeight = ymap.get('renderHeight') || 512;
+      el.canvasWidth = ymap.get('canvasWidth') || 512;
+      el.canvasHeight = ymap.get('canvasHeight') || 512;
 
-      el.renderTarget = new THREE.WebGLRenderTarget(el.renderWidth, el.renderHeight);
+      el.renderTarget = new THREE.WebGLRenderTarget(el.canvasWidth, el.canvasHeight);
       renderer.setRenderTarget(el.renderTarget);
-      el.pixels = new Uint8Array(el.renderWidth * el.renderHeight * 4);
+      el.pixels = new Uint8Array(el.canvasWidth * el.canvasHeight * 4);
 
       ymap.observe((e) => {
         const changed = e.transaction.changed;
         changed.forEach((c) => {
-          if (c.has('renderWidth') || c.has('renderHeight')) {
-            el.renderWidth = ymap.get('renderWidth');
-            el.renderHeight = ymap.get('renderHeight');
+          if (c.has('canvasWidth') || c.has('canvasHeight')) {
+            el.canvasWidth = ymap.get('canvasWidth');
+            el.canvasHeight = ymap.get('canvasHeight');
 
-            el.renderTarget.setSize(el.renderWidth, el.renderHeight);
-            el.pixels = new Uint8Array(el.renderWidth * el.renderHeight * 4);
+            el.renderTarget.setSize(el.canvasWidth, el.canvasHeight);
+            el.pixels = new Uint8Array(el.canvasWidth * el.canvasHeight * 4);
 
             const camera = el.sceneEl.camera;
-            camera.aspect = el.renderWidth / el.renderHeight;
+            camera.aspect = el.canvasWidth / el.canvasHeight;
             camera.updateProjectionMatrix();
           }
         });
@@ -52,6 +52,7 @@ AFRAME.registerComponent('csdt-container-receiver', {
         const ydoc = el.CSDT.ydoc;
         const ymap = ydoc.getMap('container');
 
+        //get camera data from parent
         const pos = new THREE.Vector3().fromArray(ymap.get('cameraPosition'));
         const quat = new THREE.Quaternion().fromArray(ymap.get('cameraQuaternion'));
 
@@ -61,9 +62,11 @@ AFRAME.registerComponent('csdt-container-receiver', {
         player.position.set(pos.x, pos.y, pos.z);
         camera.quaternion.set(quat.x, quat.y, quat.z, quat.w);
 
+        //render the scene
         renderer.render(el.sceneEl.object3D, camera);
 
-        renderer.readRenderTargetPixels(el.renderTarget, 0, 0, el.renderWidth, el.renderHeight, el.pixels);
+        //send pixel data to parent
+        renderer.readRenderTargetPixels(el.renderTarget, 0, 0, el.canvasWidth, el.canvasHeight, el.pixels);
 
         ydoc.transact(() => {
           ymap.set('childPixels', el.pixels);
