@@ -464,7 +464,13 @@ AFRAME.registerComponent('csdt-container', {
     enableWireframe: {
       default: false
     },
-    frameSkips: {
+    enableDynamicFrameSkips: {
+      default: true
+    },
+    minFrameSkips: {
+      default: 1
+    },
+    maxFrameSkips: {
       default: 2
     }
   },
@@ -517,6 +523,12 @@ AFRAME.registerComponent('csdt-container', {
       });
     });
   },
+  update: function () {
+    const el = this.el;
+    const data = this.data;
+    el.containerRadius = Math.sqrt(data.width ** 2 + data.depth ** 2) / 2;
+    el.frameSkips = data.minFrameSkips;
+  },
   syncData: function () {
     const el = this.el;
     const data = this.data;
@@ -541,6 +553,13 @@ AFRAME.registerComponent('csdt-container', {
     const camQuat = camera.getWorldQuaternion(new THREE.Quaternion());
     const containerPos = el.object3D.getWorldPosition(new THREE.Vector3());
     containerPos.y -= data.height / 2;
+    // change frameSkips based on distance to camera
+    if (data.enableDynamicFrameSkips == true) {
+      const distance = camPos.distanceTo(containerPos);
+      const minFrameSkips = 1;
+      const maxFrameSkips = 2;
+      el.frameSkips = Math.min(Math.max(Math.floor(distance / el.containerRadius), minFrameSkips), maxFrameSkips);
+    }
     // center child on the container
     camPos.sub(containerPos);
     // send info to child site
@@ -555,7 +574,7 @@ AFRAME.registerComponent('csdt-container', {
     const el = this.el;
     const data = this.data;
     if (el.connection_established !== true) return;
-    if (++el.frames % data.frameSkips === 0) {
+    if (++el.frames % el.frameSkips === 0) {
       this.syncData();
     }
     const ydoc = el.CSDT.ydoc;
