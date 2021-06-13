@@ -24,12 +24,26 @@ AFRAME.registerComponent('csdt-container-receiver', {
       el.renderWidth = ymap.get('renderWidth') || 512;
       el.renderHeight = ymap.get('renderHeight') || 512;
 
-      //set render target
-      //the scene will now render to renderTarget, rather than the canvas
       el.renderTarget = new THREE.WebGLRenderTarget(el.renderWidth, el.renderHeight);
       renderer.setRenderTarget(el.renderTarget);
-
       el.pixels = new Uint8Array(el.renderWidth * el.renderHeight * 4);
+
+      ymap.observe((e) => {
+        const changed = e.transaction.changed;
+        changed.forEach((c) => {
+          if (c.has('renderWidth') || c.has('renderHeight')) {
+            el.renderWidth = ymap.get('renderWidth');
+            el.renderHeight = ymap.get('renderHeight');
+
+            el.renderTarget.setSize(el.renderWidth, el.renderHeight);
+            el.pixels = new Uint8Array(el.renderWidth * el.renderHeight * 4);
+
+            const camera = el.sceneEl.camera;
+            camera.aspect = el.renderWidth / el.renderHeight;
+            camera.updateProjectionMatrix();
+          }
+        });
+      });
 
       document.addEventListener('CSDT-tick', () => {
         ydoc.transact(() => {

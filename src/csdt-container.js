@@ -37,11 +37,6 @@ AFRAME.registerComponent('csdt-container', {
           const ydoc = CSDT.ydoc;
           const ymap = ydoc.getMap('container');
 
-          ydoc.transact(() => {
-            ymap.set('renderWidth', window.innerWidth);
-            ymap.set('renderHeight', window.innerHeight);
-          });
-
           //open a connection
           CSDT.openConnection('container').then((d) => {
             if (d.connectionEstablished === true) {
@@ -66,9 +61,13 @@ AFRAME.registerComponent('csdt-container', {
 
     if (el.connection_established === true) {
       const camera = el.sceneEl.camera;
+      const canvas = el.sceneEl.canvas;
 
       const ydoc = el.CSDT.ydoc;
       const ymap = ydoc.getMap('container');
+
+      if (ymap.get('renderWidth') !== canvas.width) ymap.set('renderWidth', canvas.width);
+      if (ymap.get('renderHeight') !== canvas.height) ymap.set('renderHeight', canvas.height);
 
       const camPos = camera.getWorldPosition(new THREE.Vector3());
       const camQuat = camera.getWorldQuaternion(new THREE.Quaternion());
@@ -78,7 +77,7 @@ AFRAME.registerComponent('csdt-container', {
 
       camPos.sub(containerPos);
 
-      //send camera info to child site
+      //send info to child site
       ydoc.transact(() => {
         ymap.set('cameraPosition', camPos.toArray());
         ymap.set('cameraQuaternion', camQuat.toArray());
@@ -95,8 +94,9 @@ AFRAME.registerComponent('csdt-container', {
     const ydoc = el.CSDT.ydoc;
     const ymap = ydoc.getMap('container');
 
-    const width = window.innerWidth;
-    const height = window.innerHeight;
+    const canvas = el.sceneEl.canvas;
+    const width = canvas.width;
+    const height = canvas.height;
 
     //read pixel data from child site
     const pixels = ymap.get('childPixels');
