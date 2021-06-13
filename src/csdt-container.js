@@ -34,6 +34,11 @@ AFRAME.registerComponent('csdt-container', {
       el.object3D.add(wireframe);
     }
 
+    //create rendering plane
+    const geometry3 = new THREE.PlaneGeometry(512, 512);
+    const material3 = new THREE.MeshBasicMaterial({ transparent: true });
+    el.renderingPlane = new THREE.Mesh(geometry3, material3);
+
     //create iframe
     const iframe = (el.iframe = document.createElement('iframe'));
     iframe.src = data.href;
@@ -46,9 +51,6 @@ AFRAME.registerComponent('csdt-container', {
       iframe.addEventListener('load', () => {
         //check for CSDT support
         CSDT.ping().then(() => {
-          const ydoc = CSDT.ydoc;
-          const ymap = ydoc.getMap('container');
-
           //open a connection
           CSDT.openConnection('container').then((d) => {
             if (d.connectionEstablished === true) {
@@ -78,8 +80,20 @@ AFRAME.registerComponent('csdt-container', {
       const ydoc = el.CSDT.ydoc;
       const ymap = ydoc.getMap('container');
 
-      if (ymap.get('renderWidth') !== canvas.width) ymap.set('renderWidth', canvas.width);
-      if (ymap.get('renderHeight') !== canvas.height) ymap.set('renderHeight', canvas.height);
+      if (ymap.get('renderWidth') !== canvas.width) {
+        ymap.set('renderWidth', canvas.width);
+
+        const geometry = new THREE.PlaneGeometry(canvas.width, canvas.height);
+        const material = new THREE.MeshBasicMaterial({ transparent: true });
+        el.renderingPlane = new THREE.Mesh(geometry, material);
+      }
+      if (ymap.get('renderHeight') !== canvas.height) {
+        ymap.set('renderHeight', canvas.height);
+
+        const geometry = new THREE.PlaneGeometry(canvas.width, canvas.height);
+        const material = new THREE.MeshBasicMaterial({ transparent: true });
+        el.renderingPlane = new THREE.Mesh(geometry, material);
+      }
 
       const camPos = camera.getWorldPosition(new THREE.Vector3());
       const camQuat = camera.getWorldQuaternion(new THREE.Quaternion());
@@ -95,7 +109,6 @@ AFRAME.registerComponent('csdt-container', {
         ymap.set('cameraQuaternion', camQuat.toArray());
       });
 
-      //tell child site rendering is starting
       el.CSDT.dispatchEvent('CSDT-tick');
     }
   },
@@ -103,6 +116,9 @@ AFRAME.registerComponent('csdt-container', {
   tock: function () {
     const el = this.el;
     if (el.connection_established !== true) return;
+
+    el.CSDT.dispatchEvent('CSDT-tock');
+
     const ydoc = el.CSDT.ydoc;
     const ymap = ydoc.getMap('container');
 
@@ -121,13 +137,11 @@ AFRAME.registerComponent('csdt-container', {
       THREE.UVMapping
     );
 
-    const geometry = new THREE.PlaneGeometry(width, height);
-    const material = new THREE.MeshBasicMaterial({ transparent: true, map: texture });
-    const plane = new THREE.Mesh(geometry, material);
+    el.renderingPlane.material.map = texture;
 
     const camera = el.sceneEl.camera;
     const renderer = el.sceneEl.renderer;
-    const gl = renderer.getContext('webgl2', { preserveDrawingBuffer: true });
+    const gl = renderer.getContext();
 
     renderer.autoClear = false;
 
@@ -148,10 +162,8 @@ AFRAME.registerComponent('csdt-container', {
 
     const orthoCamera = new THREE.OrthographicCamera(width / -2, width / 2, height / 2, height / -2, 1, 1000);
     orthoCamera.position.z = 5;
-    const tmpScene = new THREE.Scene();
-    tmpScene.add(plane);
-    tmpScene.add(orthoCamera);
-    renderer.render(tmpScene, orthoCamera);
+
+    renderer.render(el.renderingPlane, orthoCamera);
 
     gl.stencilMask(0xff);
     gl.disable(gl.STENCIL_TEST);

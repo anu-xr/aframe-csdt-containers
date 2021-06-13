@@ -45,36 +45,30 @@ AFRAME.registerComponent('csdt-container-receiver', {
         });
       });
 
-      document.addEventListener('CSDT-tick', () => {
+      document.addEventListener('CSDT-tock', () => {
+        const el = this.el;
+        const renderer = el.sceneEl.renderer;
+
+        const ydoc = el.CSDT.ydoc;
+        const ymap = ydoc.getMap('container');
+
+        const pos = new THREE.Vector3().fromArray(ymap.get('cameraPosition'));
+        const quat = new THREE.Quaternion().fromArray(ymap.get('cameraQuaternion'));
+
+        const camera = el.sceneEl.camera;
+        const player = el.player;
+
+        player.position.set(pos.x, pos.y, pos.z);
+        camera.quaternion.set(quat.x, quat.y, quat.z, quat.w);
+
+        renderer.render(el.sceneEl.object3D, camera);
+
+        renderer.readRenderTargetPixels(el.renderTarget, 0, 0, el.renderWidth, el.renderHeight, el.pixels);
+
         ydoc.transact(() => {
           ymap.set('childPixels', el.pixels);
         });
       });
     });
-  },
-
-  tick: function () {
-    const el = this.el;
-    if (el.connection_opened !== true) return;
-
-    const ydoc = el.CSDT.ydoc;
-    const ymap = ydoc.getMap('container');
-
-    const pos = new THREE.Vector3().fromArray(ymap.get('cameraPosition'));
-    const quat = new THREE.Quaternion().fromArray(ymap.get('cameraQuaternion'));
-
-    const camera = el.sceneEl.camera;
-    const player = el.player;
-
-    player.position.set(pos.x, pos.y, pos.z);
-    camera.quaternion.set(quat.x, quat.y, quat.z, quat.w);
-  },
-
-  tock: function () {
-    const el = this.el;
-    const renderer = el.sceneEl.renderer;
-    if (el.connection_opened !== true) return;
-
-    renderer.readRenderTargetPixels(el.renderTarget, 0, 0, el.renderWidth, el.renderHeight, el.pixels);
   },
 });
