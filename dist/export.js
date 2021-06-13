@@ -517,16 +517,15 @@ AFRAME.registerComponent('csdt-container', {
       });
     });
   },
-  tick: function () {
+  syncData: function () {
     const el = this.el;
     const data = this.data;
-    if (el.connection_established !== true) return;
     const camera = el.sceneEl.camera;
     const canvas = el.sceneEl.canvas;
     const ydoc = el.CSDT.ydoc;
     const ymap = ydoc.getMap('container');
+    // sync canvas size
     if (ymap.get('canvasWidth') !== canvas.width || ymap.get('canvasHeight') !== canvas.height) {
-      // sync canvas size with child
       ydoc.transact(() => {
         ymap.set('canvasWidth', canvas.width);
         ymap.set('canvasHeight', canvas.height);
@@ -537,6 +536,7 @@ AFRAME.registerComponent('csdt-container', {
       });
       el.renderingPlane = new THREE.Mesh(geometry, material);
     }
+    // sync camera position
     const camPos = camera.getWorldPosition(new THREE.Vector3());
     const camQuat = camera.getWorldQuaternion(new THREE.Quaternion());
     const containerPos = el.object3D.getWorldPosition(new THREE.Vector3());
@@ -548,15 +548,15 @@ AFRAME.registerComponent('csdt-container', {
       ymap.set('cameraPosition', camPos.toArray());
       ymap.set('cameraQuaternion', camQuat.toArray());
     });
-    el.CSDT.dispatchEvent('CSDT-tick');
+    // tell child to render
+    el.CSDT.dispatchEvent('CSDT-render');
   },
   tock: function () {
     const el = this.el;
     const data = this.data;
     if (el.connection_established !== true) return;
     if (++el.frames % data.frameSkips === 0) {
-      // render the child site
-      el.CSDT.dispatchEvent('CSDT-tock');
+      this.syncData();
     }
     const ydoc = el.CSDT.ydoc;
     const ymap = ydoc.getMap('container');
@@ -16933,7 +16933,8 @@ AFRAME.registerComponent('csdt-container-receiver', {
           }
         });
       });
-      document.addEventListener('CSDT-tock', () => {
+      // when the parent site tells us to render
+      document.addEventListener('CSDT-render', () => {
         const el = this.el;
         const sceneEl = el.sceneEl;
         const renderer = sceneEl.renderer;

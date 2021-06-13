@@ -50,7 +50,8 @@ AFRAME.registerComponent('csdt-container-receiver', {
         });
       });
 
-      document.addEventListener('CSDT-tock', () => {
+      //when the parent site tells us to render
+      document.addEventListener('CSDT-render', () => {
         const el = this.el;
         const sceneEl = el.sceneEl;
         const renderer = sceneEl.renderer;
