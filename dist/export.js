@@ -480,6 +480,9 @@ AFRAME.registerComponent('csdt-container', {
     el.frames = 0;
     el.has_iframe_loaded = false;
     el.connection_established = false;
+    el.camPos = new THREE.Vector3();
+    el.camQuat = new THREE.Quaternion();
+    el.containerPos = new THREE.Vector3();
     // create bounding box mesh
     const geometry1 = new THREE.BoxBufferGeometry(data.width, data.height, data.depth);
     const material1 = new THREE.MeshBasicMaterial({
@@ -505,6 +508,8 @@ AFRAME.registerComponent('csdt-container', {
       transparent: true
     });
     el.renderingPlane = new THREE.Mesh(geometry3, material3);
+    el.orthoCamera = new THREE.OrthographicCamera(-512, 512, 512, -512, 1, 1000);
+    el.orthoCamera.position.z = 5;
     // create iframe
     const iframe = el.iframe = document.createElement('iframe');
     iframe.src = data.href;
@@ -538,34 +543,38 @@ AFRAME.registerComponent('csdt-container', {
     const ymap = ydoc.getMap('container');
     // sync canvas size
     if (ymap.get('canvasWidth') !== canvas.width || ymap.get('canvasHeight') !== canvas.height) {
+      const width = canvas.width;
+      const height = canvas.height;
       ydoc.transact(() => {
-        ymap.set('canvasWidth', canvas.width);
-        ymap.set('canvasHeight', canvas.height);
+        ymap.set('canvasWidth', width);
+        ymap.set('canvasHeight', height);
       });
-      const geometry = new THREE.PlaneGeometry(canvas.width, canvas.height);
+      const geometry = new THREE.PlaneGeometry(width, height);
       const material = new THREE.MeshBasicMaterial({
         transparent: true
       });
       el.renderingPlane = new THREE.Mesh(geometry, material);
+      el.orthoCamera = new THREE.OrthographicCamera(width / -2, width / 2, height / 2, height / -2, 1, 1000);
+      el.orthoCamera.position.z = 5;
     }
     // sync camera position
-    const camPos = camera.getWorldPosition(new THREE.Vector3());
-    const camQuat = camera.getWorldQuaternion(new THREE.Quaternion());
-    const containerPos = el.object3D.getWorldPosition(new THREE.Vector3());
-    containerPos.y -= data.height / 2;
+    el.camPos = camera.getWorldPosition(el.camPos);
+    el.camQuat = camera.getWorldQuaternion(el.camQuat);
+    el.containerPos = el.object3D.getWorldPosition(el.containerPos);
+    el.containerPos.y -= data.height / 2;
     // change frameSkips based on distance to camera
     if (data.enableDynamicFrameSkips == true) {
-      const distance = camPos.distanceTo(containerPos);
+      const distance = el.camPos.distanceTo(el.containerPos);
       const minFrameSkips = 1;
       const maxFrameSkips = 2;
       el.frameSkips = Math.min(Math.max(Math.floor(distance / el.containerRadius), minFrameSkips), maxFrameSkips);
     }
     // center child on the container
-    camPos.sub(containerPos);
+    el.camPos.sub(el.containerPos);
     // send info to child site
     ydoc.transact(() => {
-      ymap.set('cameraPosition', camPos.toArray());
-      ymap.set('cameraQuaternion', camQuat.toArray());
+      ymap.set('cameraPosition', el.camPos.toArray());
+      ymap.set('cameraQuaternion', el.camQuat.toArray());
     });
     // tell child to render
     el.CSDT.dispatchEvent('CSDT-render');
@@ -602,9 +611,7 @@ AFRAME.registerComponent('csdt-container', {
     renderer.clearDepth();
     gl.stencilFunc(gl.EQUAL, 1, 0xff);
     gl.stencilMask(0x00);
-    const orthoCamera = new THREE.OrthographicCamera(width / -2, width / 2, height / 2, height / -2, 1, 1000);
-    orthoCamera.position.z = 5;
-    renderer.render(el.renderingPlane, orthoCamera);
+    renderer.render(el.renderingPlane, el.orthoCamera);
     gl.stencilMask(0xff);
     gl.disable(gl.STENCIL_TEST);
     texture.dispose();
@@ -16924,6 +16931,8 @@ AFRAME.registerComponent('csdt-container-receiver', {
     el.connection_opened = false;
     el.player = document.querySelector(data.player).object3D;
     const CSDT = el.CSDT = new _libCsdtExport.CSDTChild();
+    el.camPos = new THREE.Vector3();
+    el.camQuat = new THREE.Quaternion();
     document.addEventListener('CSDT-connection-open', e => {
       el.connection_opened = true;
       CSDT.responseConnectionOpen(true);
@@ -16960,8 +16969,8 @@ AFRAME.registerComponent('csdt-container-receiver', {
         const ydoc = el.CSDT.ydoc;
         const ymap = ydoc.getMap('container');
         // get camera data from parent
-        const pos = new THREE.Vector3().fromArray(ymap.get('cameraPosition'));
-        const quat = new THREE.Quaternion().fromArray(ymap.get('cameraQuaternion'));
+        const pos = el.camPos.fromArray(ymap.get('cameraPosition'));
+        const quat = el.camQuat.fromArray(ymap.get('cameraQuaternion'));
         const camera = el.sceneEl.camera;
         const player = el.player;
         player.position.set(pos.x, pos.y, pos.z);

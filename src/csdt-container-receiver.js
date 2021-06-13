@@ -13,6 +13,8 @@ AFRAME.registerComponent('csdt-container-receiver', {
     el.connection_opened = false;
     el.player = document.querySelector(data.player).object3D;
     const CSDT = (el.CSDT = new CSDTChild());
+    el.camPos = new THREE.Vector3();
+    el.camQuat = new THREE.Quaternion();
 
     document.addEventListener('CSDT-connection-open', (e) => {
       el.connection_opened = true;
@@ -60,8 +62,8 @@ AFRAME.registerComponent('csdt-container-receiver', {
         const ymap = ydoc.getMap('container');
 
         //get camera data from parent
-        const pos = new THREE.Vector3().fromArray(ymap.get('cameraPosition'));
-        const quat = new THREE.Quaternion().fromArray(ymap.get('cameraQuaternion'));
+        const pos = el.camPos.fromArray(ymap.get('cameraPosition'));
+        const quat = el.camQuat.fromArray(ymap.get('cameraQuaternion'));
 
         const camera = el.sceneEl.camera;
         const player = el.player;
