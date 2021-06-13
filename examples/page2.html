@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <title>Example</title>
-    <script src="./aframe.js"></script>
+    <script src="https://unpkg.com/aframe@1.2.0/dist/aframe-master.js"></script>
     <script src="../dist/export.js"></script>
   </head>
 
@@ -20,7 +20,7 @@
       </a-entity>
 
       <!--CSDT Receiver-->
-      <a-entity csdt-container-receiver></a-entity>
+      <a-entity csdt-container-receiver="player: #player"></a-entity>
 
       <!--Environment-->
       <a-box position="0 0.5 0" color="#737cc2"></a-box>
