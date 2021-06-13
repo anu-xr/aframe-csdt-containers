@@ -3,9 +3,9 @@ import { CSDTParent } from './lib/csdt/export';
 AFRAME.registerComponent('csdt-container', {
   schema: {
     href: { default: '' },
-    width: { default: 10 },
-    height: { default: 10 },
-    depth: { default: 10 },
+    width: { default: 8 },
+    height: { default: 8 },
+    depth: { default: 8 },
   },
 
   init: function () {
@@ -55,6 +55,7 @@ AFRAME.registerComponent('csdt-container', {
 
   tick: function () {
     const el = this.el;
+    const data = this.data;
 
     if (el.has_iframe_loaded === false) {
       if (el.iframe?.contentDocument) {
@@ -69,10 +70,20 @@ AFRAME.registerComponent('csdt-container', {
       const ydoc = el.CSDT.ydoc;
       const ymap = ydoc.getMap('container');
 
+      const camPos = camera.getWorldPosition(new THREE.Vector3());
+      const camQuat = camera.getWorldQuaternion(new THREE.Quaternion());
+
+      const containerPos = el.object3D.getWorldPosition(new THREE.Vector3());
+      containerPos.y -= data.height / 2;
+
+      camPos.sub(containerPos);
+
+      //send camera info to child site
       ydoc.transact(() => {
-        ymap.set('cameraMatrixWorld', camera.matrixWorld.toArray());
-        ymap.set('cameraViewMatrix', camera.matrixWorldInverse.toArray());
+        ymap.set('cameraPosition', camPos.toArray());
+        ymap.set('cameraQuaternion', camQuat.toArray());
       });
+
       //tell child site rendering is starting
       el.CSDT.dispatchEvent('CSDT-tick');
     }

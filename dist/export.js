@@ -453,13 +453,13 @@ AFRAME.registerComponent('csdt-container', {
       default: ''
     },
     width: {
-      default: 10
+      default: 8
     },
     height: {
-      default: 10
+      default: 8
     },
     depth: {
-      default: 10
+      default: 8
     }
   },
   init: function () {
@@ -503,6 +503,7 @@ AFRAME.registerComponent('csdt-container', {
   },
   tick: function () {
     const el = this.el;
+    const data = this.data;
     if (el.has_iframe_loaded === false) {
       if (el.iframe?.contentDocument) {
         el.has_iframe_loaded = true;
@@ -513,9 +514,15 @@ AFRAME.registerComponent('csdt-container', {
       const camera = el.sceneEl.camera;
       const ydoc = el.CSDT.ydoc;
       const ymap = ydoc.getMap('container');
+      const camPos = camera.getWorldPosition(new THREE.Vector3());
+      const camQuat = camera.getWorldQuaternion(new THREE.Quaternion());
+      const containerPos = el.object3D.getWorldPosition(new THREE.Vector3());
+      containerPos.y -= data.height / 2;
+      camPos.sub(containerPos);
+      // send camera info to child site
       ydoc.transact(() => {
-        ymap.set('cameraMatrixWorld', camera.matrixWorld.toArray());
-        ymap.set('cameraViewMatrix', camera.matrixWorldInverse.toArray());
+        ymap.set('cameraPosition', camPos.toArray());
+        ymap.set('cameraQuaternion', camQuat.toArray());
       });
       // tell child site rendering is starting
       el.CSDT.dispatchEvent('CSDT-tick');
@@ -16865,11 +16872,17 @@ var define;
 },{}],"6BgQA":[function(require,module,exports) {
 var _libCsdtExport = require('./lib/csdt/export');
 AFRAME.registerComponent('csdt-container-receiver', {
-  schema: {},
+  schema: {
+    player: {
+      default: '#player'
+    }
+  },
   init: function () {
     const el = this.el;
+    const data = this.data;
     const renderer = el.sceneEl.renderer;
     el.connection_opened = false;
+    el.player = document.querySelector(data.player).object3D;
     const CSDT = el.CSDT = new _libCsdtExport.CSDTChild();
     document.addEventListener('CSDT-connection-open', e => {
       el.connection_opened = true;
@@ -16895,12 +16908,12 @@ AFRAME.registerComponent('csdt-container-receiver', {
     if (el.connection_opened !== true) return;
     const ydoc = el.CSDT.ydoc;
     const ymap = ydoc.getMap('container');
-    const cameraMatrixWorld = new THREE.Matrix4().fromArray(ymap.get('cameraMatrixWorld'));
-    const cameraViewMatrix = new THREE.Matrix4().fromArray(ymap.get('cameraViewMatrix'));
+    const pos = new THREE.Vector3().fromArray(ymap.get('cameraPosition'));
+    const quat = new THREE.Quaternion().fromArray(ymap.get('cameraQuaternion'));
     const camera = el.sceneEl.camera;
-    // camera.matrixAutoUpdate = false;
-    camera.matrixWorld = cameraMatrixWorld;
-    camera.matrixWorldInverse = cameraMatrixWorld;
+    const player = el.player;
+    player.position.set(pos.x, pos.y, pos.z);
+    camera.quaternion.set(quat.x, quat.y, quat.z, quat.w);
   },
   tock: function () {
     const el = this.el;

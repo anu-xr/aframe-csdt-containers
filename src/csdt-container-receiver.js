@@ -1,13 +1,17 @@
 import { CSDTChild } from './lib/csdt/export';
 
 AFRAME.registerComponent('csdt-container-receiver', {
-  schema: {},
+  schema: {
+    player: { default: '#player' },
+  },
 
   init: function () {
     const el = this.el;
+    const data = this.data;
     const renderer = el.sceneEl.renderer;
 
     el.connection_opened = false;
+    el.player = document.querySelector(data.player).object3D;
     const CSDT = (el.CSDT = new CSDTChild());
 
     document.addEventListener('CSDT-connection-open', (e) => {
@@ -42,14 +46,14 @@ AFRAME.registerComponent('csdt-container-receiver', {
     const ydoc = el.CSDT.ydoc;
     const ymap = ydoc.getMap('container');
 
-    const cameraMatrixWorld = new THREE.Matrix4().fromArray(ymap.get('cameraMatrixWorld'));
-    const cameraViewMatrix = new THREE.Matrix4().fromArray(ymap.get('cameraViewMatrix'));
+    const pos = new THREE.Vector3().fromArray(ymap.get('cameraPosition'));
+    const quat = new THREE.Quaternion().fromArray(ymap.get('cameraQuaternion'));
 
     const camera = el.sceneEl.camera;
-    //camera.matrixAutoUpdate = false;
-    camera.matrixWorld = cameraMatrixWorld;
-    camera.matrixWorldInverse = cameraMatrixWorld;
-    //camera.matrixAutoUpdate = true;
+    const player = el.player;
+
+    player.position.set(pos.x, pos.y, pos.z);
+    camera.quaternion.set(quat.x, quat.y, quat.z, quat.w);
   },
 
   tock: function () {
