@@ -97,9 +97,8 @@ AFRAME.registerComponent('csdt-container', {
       ymap.set('canvasHeight', height);
     });
 
-    const geometry = new THREE.PlaneGeometry(width, height);
-    const material = new THREE.MeshBasicMaterial({ transparent: true });
-    el.renderingPlane = new THREE.Mesh(geometry, material);
+    el.renderingPlane.geometry.dispose();
+    el.renderingPlane.geometry = new THREE.PlaneGeometry(width, height);
 
     el.orthoCamera = new THREE.OrthographicCamera(width / -2, width / 2, height / 2, height / -2, 1, 1000);
     el.orthoCamera.position.z = 5;
