@@ -30,14 +30,15 @@ AFRAME.registerComponent('csdt-container-receiver', {
       el.canvasWidth = ymap.get('canvasWidth') || 512;
       el.canvasHeight = ymap.get('canvasHeight') || 512;
 
+      el.pixels = new Uint8Array(el.canvasWidth * el.canvasHeight * 4);
+
       el.renderTarget = new THREE.WebGLRenderTarget(el.canvasWidth, el.canvasHeight);
       renderer.setRenderTarget(el.renderTarget);
-      el.pixels = new Uint8Array(el.canvasWidth * el.canvasHeight * 4);
 
       ymap.observe((e) => {
         const changed = e.transaction.changed;
+        //update things based on ymap data changes
         changed.forEach((c) => {
-          //sync canvas size with parent
           if (c.has('canvasWidth') || c.has('canvasHeight')) {
             el.canvasWidth = ymap.get('canvasWidth');
             el.canvasHeight = ymap.get('canvasHeight');
@@ -49,6 +50,9 @@ AFRAME.registerComponent('csdt-container-receiver', {
             camera.aspect = el.canvasWidth / el.canvasHeight;
             camera.updateProjectionMatrix();
           }
+
+          if (c.has('cameraPosition')) el.camPos.fromArray(ymap.get('cameraPosition'));
+          if (c.has('cameraQuaternion')) el.camQuat.fromArray(ymap.get('cameraQuaternion'));
         });
       });
 
@@ -57,15 +61,11 @@ AFRAME.registerComponent('csdt-container-receiver', {
         const el = this.el;
         const sceneEl = el.sceneEl;
         const renderer = sceneEl.renderer;
+        const camera = sceneEl.camera;
 
-        const ydoc = el.CSDT.ydoc;
-        const ymap = ydoc.getMap('container');
-
-        //get camera data from parent
-        const pos = el.camPos.fromArray(ymap.get('cameraPosition'));
-        const quat = el.camQuat.fromArray(ymap.get('cameraQuaternion'));
-
-        const camera = el.sceneEl.camera;
+        //set camera position
+        const pos = el.camPos;
+        const quat = el.camQuat;
         const player = el.player;
 
         player.position.set(pos.x, pos.y, pos.z);
@@ -76,10 +76,7 @@ AFRAME.registerComponent('csdt-container-receiver', {
 
         //send pixel data to parent
         renderer.readRenderTargetPixels(el.renderTarget, 0, 0, el.canvasWidth, el.canvasHeight, el.pixels);
-
-        ydoc.transact(() => {
-          ymap.set('childPixels', el.pixels);
-        });
+        ymap.set('childPixels', el.pixels);
       });
     });
   },

@@ -527,6 +527,7 @@ AFRAME.registerComponent('csdt-container', {
         });
       });
     });
+    this.syncCanvasSize = AFRAME.utils.throttle(this.syncCanvasSize, 3000, this);
   },
   update: function () {
     const el = this.el;
@@ -534,29 +535,34 @@ AFRAME.registerComponent('csdt-container', {
     el.containerRadius = Math.sqrt(data.width ** 2 + data.depth ** 2) / 2;
     el.frameSkips = data.minFrameSkips;
   },
+  syncCanvasSize: function () {
+    const el = this.el;
+    const canvas = el.sceneEl.canvas;
+    const ydoc = el.CSDT.ydoc;
+    const ymap = ydoc.getMap('container');
+    if (ymap.get('canvasWidth') === canvas.width && ymap.get('canvasHeight') === canvas.height) return;
+    const width = canvas.width;
+    const height = canvas.height;
+    ydoc.transact(() => {
+      ymap.set('canvasWidth', width);
+      ymap.set('canvasHeight', height);
+    });
+    const geometry = new THREE.PlaneGeometry(width, height);
+    const material = new THREE.MeshBasicMaterial({
+      transparent: true
+    });
+    el.renderingPlane = new THREE.Mesh(geometry, material);
+    el.orthoCamera = new THREE.OrthographicCamera(width / -2, width / 2, height / 2, height / -2, 1, 1000);
+    el.orthoCamera.position.z = 5;
+  },
   syncData: function () {
     const el = this.el;
     const data = this.data;
     const camera = el.sceneEl.camera;
-    const canvas = el.sceneEl.canvas;
     const ydoc = el.CSDT.ydoc;
     const ymap = ydoc.getMap('container');
     // sync canvas size
-    if (ymap.get('canvasWidth') !== canvas.width || ymap.get('canvasHeight') !== canvas.height) {
-      const width = canvas.width;
-      const height = canvas.height;
-      ydoc.transact(() => {
-        ymap.set('canvasWidth', width);
-        ymap.set('canvasHeight', height);
-      });
-      const geometry = new THREE.PlaneGeometry(width, height);
-      const material = new THREE.MeshBasicMaterial({
-        transparent: true
-      });
-      el.renderingPlane = new THREE.Mesh(geometry, material);
-      el.orthoCamera = new THREE.OrthographicCamera(width / -2, width / 2, height / 2, height / -2, 1, 1000);
-      el.orthoCamera.position.z = 5;
-    }
+    this.syncCanvasSize();
     // sync camera position
     el.camPos = camera.getWorldPosition(el.camPos);
     el.camQuat = camera.getWorldQuaternion(el.camQuat);
@@ -16943,13 +16949,13 @@ AFRAME.registerComponent('csdt-container-receiver', {
       const ymap = ydoc.getMap('container');
       el.canvasWidth = ymap.get('canvasWidth') || 512;
       el.canvasHeight = ymap.get('canvasHeight') || 512;
+      el.pixels = new Uint8Array(el.canvasWidth * el.canvasHeight * 4);
       el.renderTarget = new THREE.WebGLRenderTarget(el.canvasWidth, el.canvasHeight);
       renderer.setRenderTarget(el.renderTarget);
-      el.pixels = new Uint8Array(el.canvasWidth * el.canvasHeight * 4);
       ymap.observe(e => {
         const changed = e.transaction.changed;
+        // update things based on ymap data changes
         changed.forEach(c => {
-          // sync canvas size with parent
           if (c.has('canvasWidth') || c.has('canvasHeight')) {
             el.canvasWidth = ymap.get('canvasWidth');
             el.canvasHeight = ymap.get('canvasHeight');
@@ -16959,6 +16965,8 @@ AFRAME.registerComponent('csdt-container-receiver', {
             camera.aspect = el.canvasWidth / el.canvasHeight;
             camera.updateProjectionMatrix();
           }
+          if (c.has('cameraPosition')) el.camPos.fromArray(ymap.get('cameraPosition'));
+          if (c.has('cameraQuaternion')) el.camQuat.fromArray(ymap.get('cameraQuaternion'));
         });
       });
       // when the parent site tells us to render
@@ -16966,12 +16974,10 @@ AFRAME.registerComponent('csdt-container-receiver', {
         const el = this.el;
         const sceneEl = el.sceneEl;
         const renderer = sceneEl.renderer;
-        const ydoc = el.CSDT.ydoc;
-        const ymap = ydoc.getMap('container');
-        // get camera data from parent
-        const pos = el.camPos.fromArray(ymap.get('cameraPosition'));
-        const quat = el.camQuat.fromArray(ymap.get('cameraQuaternion'));
-        const camera = el.sceneEl.camera;
+        const camera = sceneEl.camera;
+        // set camera position
+        const pos = el.camPos;
+        const quat = el.camQuat;
         const player = el.player;
         player.position.set(pos.x, pos.y, pos.z);
         camera.quaternion.set(quat.x, quat.y, quat.z, quat.w);
@@ -16979,9 +16985,7 @@ AFRAME.registerComponent('csdt-container-receiver', {
         this.renderScene();
         // send pixel data to parent
         renderer.readRenderTargetPixels(el.renderTarget, 0, 0, el.canvasWidth, el.canvasHeight, el.pixels);
-        ydoc.transact(() => {
-          ymap.set('childPixels', el.pixels);
-        });
+        ymap.set('childPixels', el.pixels);
       });
     });
   },

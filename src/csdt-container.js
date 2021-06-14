@@ -68,6 +68,8 @@ AFRAME.registerComponent('csdt-container', {
         });
       });
     });
+
+    this.syncCanvasSize = AFRAME.utils.throttle(this.syncCanvasSize, 3000, this);
   },
 
   update: function () {
@@ -78,33 +80,41 @@ AFRAME.registerComponent('csdt-container', {
     el.frameSkips = data.minFrameSkips;
   },
 
-  syncData: function () {
+  syncCanvasSize: function () {
     const el = this.el;
-    const data = this.data;
-
-    const camera = el.sceneEl.camera;
     const canvas = el.sceneEl.canvas;
 
     const ydoc = el.CSDT.ydoc;
     const ymap = ydoc.getMap('container');
 
+    if (ymap.get('canvasWidth') === canvas.width && ymap.get('canvasHeight') === canvas.height) return;
+
+    const width = canvas.width;
+    const height = canvas.height;
+
+    ydoc.transact(() => {
+      ymap.set('canvasWidth', width);
+      ymap.set('canvasHeight', height);
+    });
+
+    const geometry = new THREE.PlaneGeometry(width, height);
+    const material = new THREE.MeshBasicMaterial({ transparent: true });
+    el.renderingPlane = new THREE.Mesh(geometry, material);
+
+    el.orthoCamera = new THREE.OrthographicCamera(width / -2, width / 2, height / 2, height / -2, 1, 1000);
+    el.orthoCamera.position.z = 5;
+  },
+
+  syncData: function () {
+    const el = this.el;
+    const data = this.data;
+    const camera = el.sceneEl.camera;
+
+    const ydoc = el.CSDT.ydoc;
+    const ymap = ydoc.getMap('container');
+
     //sync canvas size
-    if (ymap.get('canvasWidth') !== canvas.width || ymap.get('canvasHeight') !== canvas.height) {
-      const width = canvas.width;
-      const height = canvas.height;
-
-      ydoc.transact(() => {
-        ymap.set('canvasWidth', width);
-        ymap.set('canvasHeight', height);
-      });
-
-      const geometry = new THREE.PlaneGeometry(width, height);
-      const material = new THREE.MeshBasicMaterial({ transparent: true });
-      el.renderingPlane = new THREE.Mesh(geometry, material);
-
-      el.orthoCamera = new THREE.OrthographicCamera(width / -2, width / 2, height / 2, height / -2, 1, 1000);
-      el.orthoCamera.position.z = 5;
-    }
+    this.syncCanvasSize();
 
     //sync camera position
     el.camPos = camera.getWorldPosition(el.camPos);
