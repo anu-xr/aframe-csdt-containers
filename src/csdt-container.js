@@ -23,14 +23,13 @@ AFRAME.registerComponent('csdt-container', {
     el.camQuat = new THREE.Quaternion();
     el.containerPos = new THREE.Vector3();
 
-    //create bounding box mesh
+    //create container mesh
     const geometry1 = new THREE.BoxBufferGeometry(data.width, data.height, data.depth);
     const material1 = new THREE.MeshBasicMaterial({ colorWrite: false, side: THREE.DoubleSide });
-    const mesh = new THREE.Mesh(geometry1, material1);
-    mesh.visible = false;
-    mesh.name = 'boundingBox';
+    el.containerMesh = new THREE.Mesh(geometry1, material1);
+    el.containerMesh.visible = false;
 
-    el.object3D.add(mesh);
+    el.object3D.add(el.containerMesh);
 
     //create wireframe
     if (data.enableWireframe == true) {
@@ -69,6 +68,10 @@ AFRAME.registerComponent('csdt-container', {
       });
     });
 
+    document.addEventListener('CSDT-pixel-data', (e) => {
+      el.pixels = new Uint8Array(e.detail);
+    });
+
     this.syncCanvasSize = AFRAME.utils.throttle(this.syncCanvasSize, 3000, this);
   },
 
@@ -83,7 +86,6 @@ AFRAME.registerComponent('csdt-container', {
   syncCanvasSize: function () {
     const el = this.el;
     const canvas = el.sceneEl.canvas;
-
     const ydoc = el.CSDT.ydoc;
     const ymap = ydoc.getMap('container');
 
@@ -108,7 +110,6 @@ AFRAME.registerComponent('csdt-container', {
     const el = this.el;
     const data = this.data;
     const camera = el.sceneEl.camera;
-
     const ydoc = el.CSDT.ydoc;
     const ymap = ydoc.getMap('container');
 
@@ -146,7 +147,6 @@ AFRAME.registerComponent('csdt-container', {
 
   tock: function () {
     const el = this.el;
-    const data = this.data;
     if (el.connection_established !== true) return;
 
     if (++el.frames % el.frameSkips === 0) {
@@ -155,15 +155,14 @@ AFRAME.registerComponent('csdt-container', {
 
     const ydoc = el.CSDT.ydoc;
     const ymap = ydoc.getMap('container');
-
     const canvas = el.sceneEl.canvas;
     const width = canvas.width;
     const height = canvas.height;
 
     //read pixel data from child site
-    const pixels = ymap.get('childPixels');
+    //const pixels = ymap.get('childPixels');
     const texture = new THREE.DataTexture(
-      pixels,
+      el.pixels,
       width,
       height,
       THREE.RGBAFormat,
@@ -185,9 +184,9 @@ AFRAME.registerComponent('csdt-container', {
     gl.stencilFunc(gl.ALWAYS, 1, 0xff);
     gl.stencilMask(0xff);
 
-    const boundingBox = el.object3D.children.filter((c) => c.name === 'boundingBox')[0].clone();
-    boundingBox.visible = true;
-    renderer.render(boundingBox, camera);
+    el.containerMesh.visible = true;
+    renderer.render(el.containerMesh, camera);
+    el.containerMesh.visible = false;
 
     //render pixel data, using the stencil buffer as a mask
     renderer.clearDepth();

@@ -483,16 +483,15 @@ AFRAME.registerComponent('csdt-container', {
     el.camPos = new THREE.Vector3();
     el.camQuat = new THREE.Quaternion();
     el.containerPos = new THREE.Vector3();
-    // create bounding box mesh
+    // create container mesh
     const geometry1 = new THREE.BoxBufferGeometry(data.width, data.height, data.depth);
     const material1 = new THREE.MeshBasicMaterial({
       colorWrite: false,
       side: THREE.DoubleSide
     });
-    const mesh = new THREE.Mesh(geometry1, material1);
-    mesh.visible = false;
-    mesh.name = 'boundingBox';
-    el.object3D.add(mesh);
+    el.containerMesh = new THREE.Mesh(geometry1, material1);
+    el.containerMesh.visible = false;
+    el.object3D.add(el.containerMesh);
     // create wireframe
     if (data.enableWireframe == true) {
       const geometry2 = new THREE.EdgesGeometry(geometry1);
@@ -526,6 +525,9 @@ AFRAME.registerComponent('csdt-container', {
           }
         });
       });
+    });
+    document.addEventListener('CSDT-pixel-data', e => {
+      el.pixels = new Uint8Array(e.detail);
     });
     this.syncCanvasSize = AFRAME.utils.throttle(this.syncCanvasSize, 3000, this);
   },
@@ -584,7 +586,6 @@ AFRAME.registerComponent('csdt-container', {
   },
   tock: function () {
     const el = this.el;
-    const data = this.data;
     if (el.connection_established !== true) return;
     if (++el.frames % el.frameSkips === 0) {
       this.syncData();
@@ -595,8 +596,8 @@ AFRAME.registerComponent('csdt-container', {
     const width = canvas.width;
     const height = canvas.height;
     // read pixel data from child site
-    const pixels = ymap.get('childPixels');
-    const texture = new THREE.DataTexture(pixels, width, height, THREE.RGBAFormat, THREE.UnsignedByteType, THREE.UVMapping);
+    // const pixels = ymap.get('childPixels');
+    const texture = new THREE.DataTexture(el.pixels, width, height, THREE.RGBAFormat, THREE.UnsignedByteType, THREE.UVMapping);
     el.renderingPlane.material.map = texture;
     const camera = el.sceneEl.camera;
     const renderer = el.sceneEl.renderer;
@@ -607,9 +608,9 @@ AFRAME.registerComponent('csdt-container', {
     gl.stencilOp(gl.KEEP, gl.KEEP, gl.REPLACE);
     gl.stencilFunc(gl.ALWAYS, 1, 0xff);
     gl.stencilMask(0xff);
-    const boundingBox = el.object3D.children.filter(c => c.name === 'boundingBox')[0].clone();
-    boundingBox.visible = true;
-    renderer.render(boundingBox, camera);
+    el.containerMesh.visible = true;
+    renderer.render(el.containerMesh, camera);
+    el.containerMesh.visible = false;
     // render pixel data, using the stencil buffer as a mask
     renderer.clearDepth();
     gl.stencilFunc(gl.EQUAL, 1, 0xff);
@@ -16972,21 +16973,24 @@ AFRAME.registerComponent('csdt-container-receiver', {
         const sceneEl = el.sceneEl;
         const renderer = sceneEl.renderer;
         const camera = sceneEl.camera;
-        // set camera position
         const pos = el.camPos;
         const quat = el.camQuat;
         const player = el.player;
         player.position.set(pos.x, pos.y, pos.z);
         camera.quaternion.set(quat.x, quat.y, quat.z, quat.w);
-        // render the scene
         this.renderScene();
-        // send pixel data to parent
+        // get pixel data
         renderer.readRenderTargetPixels(el.renderTarget, 0, 0, el.canvasWidth, el.canvasHeight, el.pixels);
-        ymap.set('childPixels', el.pixels);
+        // send pixel data to parent
+        // use an event rather than yjs to transfer data for performance reasons, el.pixels is very large
+        const response = new CustomEvent('CSDT-pixel-data', {
+          detail: el.pixels
+        });
+        parent.document.dispatchEvent(response);
       });
     });
   },
-  // taken from https://github.com/aframevr/aframe/blob/b164623dfa0d2548158f4b7da06157497cd4ea29/src/core/scene/a-scene.js#L782
+  // modified from https://github.com/aframevr/aframe/blob/b164623dfa0d2548158f4b7da06157497cd4ea29/src/core/scene/a-scene.js#L782
   renderScene: function () {
     const el = this.el;
     const sceneEl = el.sceneEl;

@@ -63,7 +63,6 @@ AFRAME.registerComponent('csdt-container-receiver', {
         const renderer = sceneEl.renderer;
         const camera = sceneEl.camera;
 
-        //set camera position
         const pos = el.camPos;
         const quat = el.camQuat;
         const player = el.player;
@@ -71,17 +70,20 @@ AFRAME.registerComponent('csdt-container-receiver', {
         player.position.set(pos.x, pos.y, pos.z);
         camera.quaternion.set(quat.x, quat.y, quat.z, quat.w);
 
-        //render the scene
         this.renderScene();
 
-        //send pixel data to parent
+        //get pixel data
         renderer.readRenderTargetPixels(el.renderTarget, 0, 0, el.canvasWidth, el.canvasHeight, el.pixels);
-        ymap.set('childPixels', el.pixels);
+
+        //send pixel data to parent
+        //use an event rather than yjs to transfer data for performance reasons, el.pixels is very large
+        const response = new CustomEvent('CSDT-pixel-data', { detail: el.pixels });
+        parent.document.dispatchEvent(response);
       });
     });
   },
 
-  //taken from https://github.com/aframevr/aframe/blob/b164623dfa0d2548158f4b7da06157497cd4ea29/src/core/scene/a-scene.js#L782
+  //modified from https://github.com/aframevr/aframe/blob/b164623dfa0d2548158f4b7da06157497cd4ea29/src/core/scene/a-scene.js#L782
   renderScene: function () {
     const el = this.el;
     const sceneEl = el.sceneEl;
