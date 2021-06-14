@@ -25,7 +25,7 @@ AFRAME.registerComponent('csdt-container-receiver', {
       el.sceneEl.renderer.setAnimationLoop(null);
 
       const ydoc = CSDT.ydoc;
-      const ymap = ydoc.getMap('container');
+      const ymap = ydoc.getMap(CSDT.hash);
 
       el.canvasWidth = ymap.get('canvasWidth') || 512;
       el.canvasHeight = ymap.get('canvasHeight') || 512;
@@ -77,7 +77,7 @@ AFRAME.registerComponent('csdt-container-receiver', {
 
         //send pixel data to parent
         //use an event rather than yjs to transfer data for performance reasons, el.pixels is very large
-        const response = new CustomEvent('CSDT-pixel-data', { detail: el.pixels });
+        const response = new CustomEvent(`${CSDT.hash}-pixel-data`, { detail: el.pixels });
         parent.document.dispatchEvent(response);
       });
     });

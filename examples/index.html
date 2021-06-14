@@ -21,6 +21,7 @@
 
       <!--Container-->
       <a-entity
+        id="container"
         position="-6 2.001 0"
         csdt-container="href: page2.html; width: 6; height: 4; depth: 6; enableWireframe: true"
       ></a-entity>
@@ -31,5 +32,19 @@
       <a-plane rotation="-90 0 0" width="16" height="16" color="#3fa841"></a-plane>
       <a-box position="0 2.5 -8" width="16" height="5" depth=".25" color="#a8413f"></a-box>
     </a-scene>
+
+    <script>
+      const scene = document.querySelector('a-scene');
+      const container = document.getElementById('container');
+
+      //stress test
+      const num_containers = 0;
+
+      for (let i = 0; i < num_containers; i++) {
+        const copy = container.cloneNode();
+        copy.setAttribute('position', { x: i * 8 + 2, y: 2.001, z: 0 });
+        scene.appendChild(copy);
+      }
+    </script>
   </body>
 </html>

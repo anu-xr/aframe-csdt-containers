@@ -514,6 +514,8 @@ AFRAME.registerComponent('csdt-container', {
     iframe.src = data.href;
     document.body.appendChild(iframe);
     const CSDT = el.CSDT = new _libCsdtExport.CSDTParent(iframe);
+    const ydoc = el.CSDT.ydoc;
+    el.ymap = ydoc.getMap(CSDT.hash);
     // wait for iframe to fully load
     iframe.addEventListener('load', () => {
       // check for CSDT support
@@ -526,7 +528,7 @@ AFRAME.registerComponent('csdt-container', {
         });
       });
     });
-    document.addEventListener('CSDT-pixel-data', e => {
+    document.addEventListener(`${CSDT.hash}-pixel-data`, e => {
       el.pixels = new Uint8Array(e.detail);
     });
     this.syncCanvasSize = AFRAME.utils.throttle(this.syncCanvasSize, 3000, this);
@@ -541,7 +543,7 @@ AFRAME.registerComponent('csdt-container', {
     const el = this.el;
     const canvas = el.sceneEl.canvas;
     const ydoc = el.CSDT.ydoc;
-    const ymap = ydoc.getMap('container');
+    const ymap = el.ymap;
     if (ymap.get('canvasWidth') === canvas.width && ymap.get('canvasHeight') === canvas.height) return;
     const width = canvas.width;
     const height = canvas.height;
@@ -559,7 +561,7 @@ AFRAME.registerComponent('csdt-container', {
     const data = this.data;
     const camera = el.sceneEl.camera;
     const ydoc = el.CSDT.ydoc;
-    const ymap = ydoc.getMap('container');
+    const ymap = el.ymap;
     // sync canvas size
     this.syncCanvasSize();
     // sync camera position
@@ -590,8 +592,6 @@ AFRAME.registerComponent('csdt-container', {
     if (++el.frames % el.frameSkips === 0) {
       this.syncData();
     }
-    const ydoc = el.CSDT.ydoc;
-    const ymap = ydoc.getMap('container');
     const canvas = el.sceneEl.canvas;
     const width = canvas.width;
     const height = canvas.height;
@@ -719,9 +719,9 @@ var define;
     }
   }
 })({
-  "3ydNP": [function (require, module, exports) {
+  "q9jrq": [function (require, module, exports) {
     var HMR_HOST = null;
-    var HMR_PORT = 1234;
+    var HMR_PORT = 65258;
     var HMR_SECURE = false;
     var HMR_ENV_HASH = "d751713988987e9331980363e24189ce";
     module.bundle.HMR_BUNDLE_ID = "dcd721b617217ecd3e90b74d2c08edc6";
@@ -1040,6 +1040,7 @@ var define;
       constructor(iframe) {
         super();
         this.iframe = iframe;
+        this.hash = Math.random().toString(36).substring(2, 15);
         // send ydoc updates
         this.ydoc.on('update', (update, _origin, _doc, _tr) => {
           const event = new CustomEvent('CSDT-y-update', {
@@ -1066,7 +1067,8 @@ var define;
             once: true
           });
           const data = {
-            connectionType: connectionType
+            connectionType: connectionType,
+            hash: this.hash
           };
           const event = new CustomEvent('CSDT-connection-open', {
             detail: data
@@ -1093,6 +1095,7 @@ var define;
       constructor() {
         this.version = '0.1.0';
         this.ydoc = new _yjs.Doc();
+        this.hash = '';
         // receive ydoc updates
         document.addEventListener('CSDT-y-update', e => {
           const update = e.detail;
@@ -16903,6 +16906,9 @@ var define;
           });
           parent.document.dispatchEvent(response);
         });
+        document.addEventListener('CSDT-connection-open', e => {
+          this.hash = e.detail.hash;
+        });
       }
       responseConnectionOpen(connectionEstablished = false) {
         const data = {
@@ -16918,7 +16924,7 @@ var define;
     "./base": "8wNTG",
     "@parcel/transformer-js/lib/esmodule-helpers.js": "5gA8y"
   }]
-}, ["3ydNP", "556pz"], "556pz", "parcelRequirecf62");
+}, ["q9jrq", "556pz"], "556pz", "parcelRequirecf62");
 
 },{}],"6BgQA":[function(require,module,exports) {
 var _libCsdtExport = require('./lib/csdt/export');
@@ -16944,7 +16950,7 @@ AFRAME.registerComponent('csdt-container-receiver', {
       // we sync our render with the parent site, rather than using a separate clock
       el.sceneEl.renderer.setAnimationLoop(null);
       const ydoc = CSDT.ydoc;
-      const ymap = ydoc.getMap('container');
+      const ymap = ydoc.getMap(CSDT.hash);
       el.canvasWidth = ymap.get('canvasWidth') || 512;
       el.canvasHeight = ymap.get('canvasHeight') || 512;
       el.pixels = new Uint8Array(el.canvasWidth * el.canvasHeight * 4);
@@ -16983,7 +16989,7 @@ AFRAME.registerComponent('csdt-container-receiver', {
         renderer.readRenderTargetPixels(el.renderTarget, 0, 0, el.canvasWidth, el.canvasHeight, el.pixels);
         // send pixel data to parent
         // use an event rather than yjs to transfer data for performance reasons, el.pixels is very large
-        const response = new CustomEvent('CSDT-pixel-data', {
+        const response = new CustomEvent(`${CSDT.hash}-pixel-data`, {
           detail: el.pixels
         });
         parent.document.dispatchEvent(response);

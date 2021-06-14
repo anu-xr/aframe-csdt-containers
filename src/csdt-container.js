@@ -54,6 +54,8 @@ AFRAME.registerComponent('csdt-container', {
     document.body.appendChild(iframe);
 
     const CSDT = (el.CSDT = new CSDTParent(iframe));
+    const ydoc = el.CSDT.ydoc;
+    el.ymap = ydoc.getMap(CSDT.hash);
 
     //wait for iframe to fully load
     iframe.addEventListener('load', () => {
@@ -68,7 +70,7 @@ AFRAME.registerComponent('csdt-container', {
       });
     });
 
-    document.addEventListener('CSDT-pixel-data', (e) => {
+    document.addEventListener(`${CSDT.hash}-pixel-data`, (e) => {
       el.pixels = new Uint8Array(e.detail);
     });
 
@@ -87,7 +89,7 @@ AFRAME.registerComponent('csdt-container', {
     const el = this.el;
     const canvas = el.sceneEl.canvas;
     const ydoc = el.CSDT.ydoc;
-    const ymap = ydoc.getMap('container');
+    const ymap = el.ymap;
 
     if (ymap.get('canvasWidth') === canvas.width && ymap.get('canvasHeight') === canvas.height) return;
 
@@ -111,7 +113,7 @@ AFRAME.registerComponent('csdt-container', {
     const data = this.data;
     const camera = el.sceneEl.camera;
     const ydoc = el.CSDT.ydoc;
-    const ymap = ydoc.getMap('container');
+    const ymap = el.ymap;
 
     //sync canvas size
     this.syncCanvasSize();
@@ -153,8 +155,6 @@ AFRAME.registerComponent('csdt-container', {
       this.syncData();
     }
 
-    const ydoc = el.CSDT.ydoc;
-    const ymap = ydoc.getMap('container');
     const canvas = el.sceneEl.canvas;
     const width = canvas.width;
     const height = canvas.height;

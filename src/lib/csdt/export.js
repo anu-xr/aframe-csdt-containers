@@ -140,9 +140,9 @@
       this[globalName] = mainExports;
     }
   }
-})({"3ydNP":[function(require,module,exports) {
+})({"q9jrq":[function(require,module,exports) {
 var HMR_HOST = null;
-var HMR_PORT = 1234;
+var HMR_PORT = 65258;
 var HMR_SECURE = false;
 var HMR_ENV_HASH = "d751713988987e9331980363e24189ce";
 module.bundle.HMR_BUNDLE_ID = "dcd721b617217ecd3e90b74d2c08edc6";
@@ -461,6 +461,7 @@ class CSDTParent extends _baseDefault.default {
   constructor(iframe) {
     super();
     this.iframe = iframe;
+    this.hash = Math.random().toString(36).substring(2, 15);
     // send ydoc updates
     this.ydoc.on('update', (update, _origin, _doc, _tr) => {
       const event = new CustomEvent('CSDT-y-update', {
@@ -487,7 +488,8 @@ class CSDTParent extends _baseDefault.default {
         once: true
       });
       const data = {
-        connectionType: connectionType
+        connectionType: connectionType,
+        hash: this.hash
       };
       const event = new CustomEvent('CSDT-connection-open', {
         detail: data
@@ -511,6 +513,7 @@ class Base {
   constructor() {
     this.version = '0.1.0';
     this.ydoc = new _yjs.Doc();
+    this.hash = '';
     // receive ydoc updates
     document.addEventListener('CSDT-y-update', e => {
       const update = e.detail;
@@ -16933,6 +16936,9 @@ class CSDTChild extends _baseDefault.default {
       });
       parent.document.dispatchEvent(response);
     });
+    document.addEventListener('CSDT-connection-open', e => {
+      this.hash = e.detail.hash;
+    });
   }
   responseConnectionOpen(connectionEstablished = false) {
     const data = {
@@ -16945,6 +16951,6 @@ class CSDTChild extends _baseDefault.default {
   }
 }
 
-},{"./base":"8wNTG","@parcel/transformer-js/lib/esmodule-helpers.js":"5gA8y"}]},["3ydNP","556pz"], "556pz", "parcelRequirecf62")
+},{"./base":"8wNTG","@parcel/transformer-js/lib/esmodule-helpers.js":"5gA8y"}]},["q9jrq","556pz"], "556pz", "parcelRequirecf62")
 
 //# sourceMappingURL=export.js.map
