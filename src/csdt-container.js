@@ -68,14 +68,11 @@ AFRAME.registerComponent('csdt-container', {
 
     //wait for iframe to fully load
     iframe.addEventListener('load', () => {
-      //check for CSDT support
-      CSDT.ping().then(() => {
-        //open a connection
-        CSDT.openConnection('container').then((d) => {
-          if (d.connectionEstablished === true) {
-            el.connection_established = true;
-          }
-        });
+      //open a CSDT connection
+      CSDT.openConnection('container').then((res) => {
+        if (res === true) {
+          el.connection_established = true;
+        }
       });
     });
 

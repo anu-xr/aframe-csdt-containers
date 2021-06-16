@@ -140,9 +140,9 @@
       this[globalName] = mainExports;
     }
   }
-})({"q9jrq":[function(require,module,exports) {
+})({"gKhix":[function(require,module,exports) {
 var HMR_HOST = null;
-var HMR_PORT = 65258;
+var HMR_PORT = 59101;
 var HMR_SECURE = false;
 var HMR_ENV_HASH = "d751713988987e9331980363e24189ce";
 module.bundle.HMR_BUNDLE_ID = "dcd721b617217ecd3e90b74d2c08edc6";
@@ -462,46 +462,19 @@ class CSDTParent extends _baseDefault.default {
     super();
     this.iframe = iframe;
     this.hash = Math.random().toString(36).substring(2, 15);
-    // send ydoc updates
-    this.ydoc.on('update', (update, _origin, _doc, _tr) => {
-      const event = new CustomEvent('CSDT-y-update', {
-        detail: update
-      });
-      this.iframe.contentDocument.dispatchEvent(event);
-    });
-  }
-  /*returns a promise that resolves with the ping to the child site*/
-  ping() {
-    const startTime = Date.now();
-    return new Promise((resolve, _reject) => {
-      window.document.addEventListener('CSDT-response-ping', e => resolve(startTime - e.detail), {
-        once: true
-      });
-      const event = new CustomEvent('CSDT-ping');
-      this.iframe.contentDocument.dispatchEvent(event);
-    });
   }
   /*returns a promise that resolves with a response from the child site*/
   openConnection(connectionType) {
     return new Promise((resolve, _reject) => {
-      window.document.addEventListener('CSDT-response-connection-open', e => resolve(e.detail), {
+      window.document.addEventListener('CSDT-response-connection-open', e => resolve(Boolean(e.detail)), {
         once: true
       });
       const data = {
-        connectionType: connectionType,
+        connectionType: String(connectionType),
         hash: this.hash
       };
-      const event = new CustomEvent('CSDT-connection-open', {
-        detail: data
-      });
-      this.iframe.contentDocument.dispatchEvent(event);
+      this.dispatchEvent('CSDT-connection-open', data);
     });
-  }
-  dispatchEvent(text, data) {
-    const event = new CustomEvent(text, {
-      detail: data
-    });
-    this.iframe.contentDocument.dispatchEvent(event);
   }
 }
 
@@ -515,10 +488,20 @@ class Base {
     this.ydoc = new _yjs.Doc();
     this.hash = '';
     // receive ydoc updates
-    document.addEventListener('CSDT-y-update', e => {
-      const update = e.detail;
+    document.addEventListener('CSDT-ydoc-update', e => {
+      const update = new Uint8Array(e.detail);
       _yjs.applyUpdate(this.ydoc, update);
     });
+    // send ydoc updates
+    this.ydoc.on('update', (update, _origin, _doc, _tr) => {
+      this.dispatchEvent('CSDT-ydoc-update', new Uint8Array(update));
+    });
+  }
+  dispatchEvent(text, data = null) {
+    const event = new CustomEvent(text, {
+      detail: data
+    });
+    if (this.iframe) this.iframe.contentDocument.dispatchEvent(event); else parent.document.dispatchEvent(event);
   }
 }
 exports.default = Base;
@@ -16923,34 +16906,15 @@ var _baseDefault = _parcelHelpers.interopDefault(_base);
 class CSDTChild extends _baseDefault.default {
   constructor() {
     super();
-    // ydoc send updates
-    this.ydoc.on('update', (update, _origin, _doc, _tr) => {
-      const event = new CustomEvent('CSDT-y-update', {
-        detail: update
-      });
-      parent.document.dispatchEvent(event);
-    });
-    document.addEventListener('CSDT-ping', () => {
-      const response = new CustomEvent('CSDT-response-ping', {
-        detail: Date.now()
-      });
-      parent.document.dispatchEvent(response);
-    });
     document.addEventListener('CSDT-connection-open', e => {
-      this.hash = e.detail.hash;
+      this.hash = String(e.detail.hash);
     });
   }
   responseConnectionOpen(connectionEstablished = false) {
-    const data = {
-      connectionEstablished: connectionEstablished
-    };
-    const response = new CustomEvent('CSDT-response-connection-open', {
-      detail: data
-    });
-    parent.document.dispatchEvent(response);
+    this.dispatchEvent('CSDT-response-connection-open', Boolean(connectionEstablished));
   }
 }
 
-},{"./base":"8wNTG","@parcel/transformer-js/lib/esmodule-helpers.js":"5gA8y"}]},["q9jrq","556pz"], "556pz", "parcelRequirecf62")
+},{"./base":"8wNTG","@parcel/transformer-js/lib/esmodule-helpers.js":"5gA8y"}]},["gKhix","556pz"], "556pz", "parcelRequirecf62")
 
 //# sourceMappingURL=export.js.map

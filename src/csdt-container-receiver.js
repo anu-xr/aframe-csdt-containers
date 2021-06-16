@@ -16,7 +16,7 @@ AFRAME.registerComponent('csdt-container-receiver', {
     el.camPos = new THREE.Vector3();
     el.camQuat = new THREE.Quaternion();
 
-    document.addEventListener('CSDT-connection-open', (e) => {
+    document.addEventListener('CSDT-connection-open', () => {
       el.connection_opened = true;
       CSDT.responseConnectionOpen(true);
 
