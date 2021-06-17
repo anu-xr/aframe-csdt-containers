@@ -88,6 +88,7 @@ AFRAME.registerComponent('csdt-container', {
       });
     });
 
+    //receive pixel data
     document.addEventListener(`${CSDT.hash}-pixel-data`, (e) => {
       el.pixels = new Uint8Array(e.detail);
     });

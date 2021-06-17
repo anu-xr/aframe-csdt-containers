@@ -549,6 +549,7 @@ AFRAME.registerComponent('csdt-container', {
         }
       });
     });
+    // receive pixel data
     document.addEventListener(`${CSDT.hash}-pixel-data`, e => {
       el.pixels = new Uint8Array(e.detail);
     });
@@ -16887,7 +16888,7 @@ AFRAME.registerComponent('csdt-container-receiver', {
     const CSDT = el.CSDT = new _libCsdtExport.CSDTChild();
     el.camPos = new THREE.Vector3();
     el.camQuat = new THREE.Quaternion();
-    if (document.querySelector(data.player)) el.player = document.querySelector(data.player).object3D; else el.player = el.sceneEl.camera;
+    if (document.querySelector(data.player)) el.player = document.querySelector(data.player).object3D; else el.player = el.sceneEl.camera.el.object3D;
     document.addEventListener('CSDT-connection-open', () => {
       el.connection_opened = true;
       CSDT.responseConnectionOpen(true);

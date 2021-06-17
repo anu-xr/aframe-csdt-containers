@@ -16,7 +16,7 @@ AFRAME.registerComponent('csdt-container-receiver', {
     el.camQuat = new THREE.Quaternion();
 
     if (document.querySelector(data.player)) el.player = document.querySelector(data.player).object3D;
-    else el.player = el.sceneEl.camera;
+    else el.player = el.sceneEl.camera.el.object3D;
 
     document.addEventListener('CSDT-connection-open', () => {
       el.connection_opened = true;
