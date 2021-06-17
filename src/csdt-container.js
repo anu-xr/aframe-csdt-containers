@@ -6,6 +6,7 @@ AFRAME.registerComponent('csdt-container', {
     width: { default: 8 },
     height: { default: 8 },
     depth: { default: 8 },
+    enableInteraction: { default: true },
     enableText: { default: false },
     enableWireframe: { default: false },
     enableDynamicFrameSkips: { default: true },
@@ -18,6 +19,7 @@ AFRAME.registerComponent('csdt-container', {
     const data = this.data;
 
     el.frames = 0;
+    el.frameSkips = 1;
     el.has_iframe_loaded = false;
     el.connection_established = false;
     el.camPos = new THREE.Vector3();
@@ -39,7 +41,7 @@ AFRAME.registerComponent('csdt-container', {
       el.sceneEl.containers = [];
     }
 
-    el.sceneEl.containers.push({ el: el });
+    el.sceneEl.containers.push({ el: el, data: data });
 
     //create container mesh
     const geometry1 = new THREE.BoxBufferGeometry(data.width, data.height, data.depth);
@@ -101,7 +103,6 @@ AFRAME.registerComponent('csdt-container', {
     const data = this.data;
 
     el.containerRadius = Math.sqrt(data.width ** 2 + data.depth ** 2) / 2;
-    el.frameSkips = data.minFrameSkips;
   },
 
   syncCanvasSize: function () {

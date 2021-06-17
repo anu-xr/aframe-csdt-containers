@@ -4,19 +4,18 @@
     <meta charset="utf-8" />
     <title>Example</title>
     <script src="https://unpkg.com/aframe@1.2.0/dist/aframe-master.js"></script>
+    <script src="./aframe-extras.controls.min.js"></script>
+
     <script src="../dist/export.js"></script>
   </head>
 
   <body>
     <a-scene stats>
       <!--Camera-->
-      <a-entity
-        id="player"
-        position="0 1.6 3"
-        camera
-        wasd-controls="acceleration: 12;"
-        look-controls="pointerLockEnabled: false"
-      >
+      <a-entity id="player" position="0 0 3" movement-controls="speed: 0.1">
+        <a-entity position="0 1.6 0" camera look-controls="pointerLockEnabled: false"></a-entity>
+        <a-entity hand-controls="hand: left"></a-entity>
+        <a-entity hand-controls="hand: right"></a-entity>
       </a-entity>
 
       <!--Container-->

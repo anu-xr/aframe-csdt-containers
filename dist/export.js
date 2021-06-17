@@ -463,6 +463,9 @@ AFRAME.registerComponent('csdt-container', {
     depth: {
       default: 8
     },
+    enableInteraction: {
+      default: true
+    },
     enableText: {
       default: false
     },
@@ -483,6 +486,7 @@ AFRAME.registerComponent('csdt-container', {
     const el = this.el;
     const data = this.data;
     el.frames = 0;
+    el.frameSkips = 1;
     el.has_iframe_loaded = false;
     el.connection_established = false;
     el.camPos = new THREE.Vector3();
@@ -499,7 +503,8 @@ AFRAME.registerComponent('csdt-container', {
       el.sceneEl.containers = [];
     }
     el.sceneEl.containers.push({
-      el: el
+      el: el,
+      data: data
     });
     // create container mesh
     const geometry1 = new THREE.BoxBufferGeometry(data.width, data.height, data.depth);
@@ -559,7 +564,6 @@ AFRAME.registerComponent('csdt-container', {
     const el = this.el;
     const data = this.data;
     el.containerRadius = Math.sqrt(data.width ** 2 + data.depth ** 2) / 2;
-    el.frameSkips = data.minFrameSkips;
   },
   syncCanvasSize: function () {
     const el = this.el;
@@ -16969,15 +16973,82 @@ AFRAME.registerComponent('csdt-container-renderer', {
 
     el.camPos = new THREE.Vector3();
     el.tmpVector = new THREE.Vector3();
+    el.raycaster = new THREE.Raycaster();
+    el.raycastCoords = new THREE.Vector2(0, 0);
 
-    //create rendering plane
-    const geometry = new THREE.PlaneGeometry(512, 512);
+    //temp values until we get data from the parent site
+    const width = 512;
+    const height = 512;
+
+    const geometry = new THREE.PlaneGeometry(width, height);
     const material = new THREE.MeshBasicMaterial({ transparent: true });
     el.renderingPlane = new THREE.Mesh(geometry, material);
 
-    //create frustrum
+    el.orthoCamera = new THREE.OrthographicCamera(width / -2, width / 2, height / 2, height / -2, 1, 1000);
+    el.orthoCamera.position.z = 5;
+
     el.frustum = new THREE.Frustum();
     el.frustumMatrix = new THREE.Matrix4();
+
+    const handNames = ['left', 'right'];
+    const hands = handNames.map((name) => {
+      //listen to user input
+      const hand = document.createElement('a-entity');
+      hand.setAttribute('hand-controls', { hand: name });
+      el.appendChild(hand);
+
+      //pass user input to child sites
+      this.handleInputEvent(hand, 'gripdown');
+      this.handleInputEvent(hand, 'gripup');
+      this.handleInputEvent(hand, 'pointup');
+      this.handleInputEvent(hand, 'pointdown');
+      this.handleInputEvent(hand, 'thumbup');
+      this.handleInputEvent(hand, 'thumbdown');
+      this.handleInputEvent(hand, 'pointingstart');
+      this.handleInputEvent(hand, 'pointingend');
+      this.handleInputEvent(hand, 'pistolstart');
+      this.handleInputEvent(hand, 'pistolend');
+
+      return hand;
+    });
+
+    el.handL = hands[0];
+    el.handR = hands[1];
+  },
+
+  handleInputEvent: function (source, event) {
+    const el = this.el;
+
+    source.addEventListener(event, () => {
+      //after an input, run this code on the next tock
+      el.addEventListener(
+        'tock',
+        () => {
+          this.cameraInContainer(event);
+        },
+        { once: true }
+      );
+    });
+  },
+
+  cameraInContainer: function (eventName) {
+    const el = this.el;
+    const containers = el.sceneEl.containers;
+    const camera = el.sceneEl.camera;
+
+    //see if the user is inside a container
+    containers.forEach((obj) => {
+      const mesh = obj.el.containerMesh;
+
+      el.raycaster.setFromCamera(el.raycastCoords, camera);
+      const intersects = el.raycaster.intersectObject(mesh);
+
+      if (intersects.length % 2 === 1) {
+        //user is in container
+        //send input to child site
+        obj.el.CSDT.dispatchEvent(eventName);
+      }
+    });
   },
 
   tock: function () {
@@ -16991,17 +17062,25 @@ AFRAME.registerComponent('csdt-container-renderer', {
     const containers = el.sceneEl.containers;
     renderer.autoClear = false;
 
-    //update things for rendering
-    el.renderingPlane.geometry.dispose();
-    el.renderingPlane.geometry = new THREE.PlaneGeometry(width, height);
+    el.emit('tock');
 
-    const orthoCamera = new THREE.OrthographicCamera(width / -2, width / 2, height / 2, height / -2, 1, 1000);
-    orthoCamera.position.z = 5;
+    //keep hand-controls invisible
+    el.handL.object3D.traverseVisible((obj) => (obj.visible = false));
+    el.handR.object3D.traverseVisible((obj) => (obj.visible = false));
+
+    if (el.renderingPlane.geometry.width !== width || el.renderingPlane.geometry.height !== height) {
+      el.renderingPlane.geometry.dispose();
+      el.renderingPlane.geometry = new THREE.PlaneGeometry(width, height);
+
+      el.orthoCamera = new THREE.OrthographicCamera(width / -2, width / 2, height / 2, height / -2, 1, 1000);
+      el.orthoCamera.position.z = 5;
+    }
 
     el.frustumMatrix.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
     el.frustum.setFromProjectionMatrix(el.frustumMatrix);
 
     //sort containers by distance to camera
+    //render farthest first
     el.camPos = camera.getWorldPosition(el.camPos);
     containers.forEach((obj) => {
       obj.distance = obj.el.object3D.getWorldPosition(el.tmpVector).distanceTo(el.camPos);
@@ -17051,7 +17130,7 @@ AFRAME.registerComponent('csdt-container-renderer', {
 
     textures.forEach((texture) => {
       el.renderingPlane.material.map = texture;
-      renderer.render(el.renderingPlane, orthoCamera);
+      renderer.render(el.renderingPlane, el.orthoCamera);
       texture.dispose();
     });
 
