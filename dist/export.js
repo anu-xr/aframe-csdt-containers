@@ -16868,10 +16868,10 @@ AFRAME.registerComponent('csdt-container-receiver', {
     const data = this.data;
     const renderer = el.sceneEl.renderer;
     el.connection_opened = false;
-    el.player = document.querySelector(data.player).object3D;
     const CSDT = el.CSDT = new _libCsdtExport.CSDTChild();
     el.camPos = new THREE.Vector3();
     el.camQuat = new THREE.Quaternion();
+    if (document.querySelector(data.player)) el.player = document.querySelector(data.player).object3D; else el.player = el.sceneEl.camera;
     document.addEventListener('CSDT-connection-open', () => {
       el.connection_opened = true;
       CSDT.responseConnectionOpen(true);
