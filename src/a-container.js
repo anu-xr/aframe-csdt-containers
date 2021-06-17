@@ -7,6 +7,7 @@ AFRAME.registerPrimitive('a-container', {
     width: 'csdt-container.width',
     height: 'csdt-container.height',
     depth: 'csdt-container.depth',
-    wireframe: 'csdt-container.enableWireframe',
+    enablewireframe: 'csdt-container.enableWireframe',
+    enabletext: 'csdt-container.enableText',
   },
 });

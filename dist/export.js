@@ -463,6 +463,9 @@ AFRAME.registerComponent('csdt-container', {
     depth: {
       default: 8
     },
+    enableText: {
+      default: false
+    },
     enableWireframe: {
       default: false
     },
@@ -516,6 +519,19 @@ AFRAME.registerComponent('csdt-container', {
       });
       const wireframe = new THREE.LineSegments(geometry2, material2);
       el.object3D.add(wireframe);
+    }
+    // create text
+    if (data.enableText === true) {
+      const text = document.createElement('a-text');
+      text.setAttribute('value', data.href);
+      text.setAttribute('position', {
+        x: data.width / 2,
+        y: data.height / 2 - 0.15,
+        z: data.depth / 2
+      });
+      text.setAttribute('rotation', '0 90 0');
+      text.setAttribute('side', 'double');
+      el.appendChild(text);
     }
     // create iframe
     const iframe = el.iframe = document.createElement('iframe');
@@ -17053,7 +17069,8 @@ AFRAME.registerPrimitive('a-container', {
     width: 'csdt-container.width',
     height: 'csdt-container.height',
     depth: 'csdt-container.depth',
-    wireframe: 'csdt-container.enableWireframe',
+    enablewireframe: 'csdt-container.enableWireframe',
+    enabletext: 'csdt-container.enableText',
   },
 });
 
