@@ -45,6 +45,7 @@ AFRAME.registerComponent('csdt-container', {
     const material1 = new THREE.MeshBasicMaterial({ colorWrite: false, side: THREE.DoubleSide });
     el.containerMesh = new THREE.Mesh(geometry1, material1);
     el.containerMesh.visible = false;
+    el.containerMesh.geometry.computeBoundingSphere();
 
     el.object3D.add(el.containerMesh);
 

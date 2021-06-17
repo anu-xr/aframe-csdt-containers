@@ -9,6 +9,10 @@ AFRAME.registerComponent('csdt-container-renderer', {
     const geometry = new THREE.PlaneGeometry(512, 512);
     const material = new THREE.MeshBasicMaterial({ transparent: true });
     el.renderingPlane = new THREE.Mesh(geometry, material);
+
+    //create frustrum
+    el.frustum = new THREE.Frustum();
+    el.frustumMatrix = new THREE.Matrix4();
   },
 
   tock: function () {
@@ -19,15 +23,18 @@ AFRAME.registerComponent('csdt-container-renderer', {
     const camera = el.sceneEl.camera;
     const renderer = el.sceneEl.renderer;
     const gl = renderer.getContext();
+    const containers = el.sceneEl.containers;
+    renderer.autoClear = false;
 
+    //update things for rendering
     el.renderingPlane.geometry.dispose();
     el.renderingPlane.geometry = new THREE.PlaneGeometry(width, height);
 
     const orthoCamera = new THREE.OrthographicCamera(width / -2, width / 2, height / 2, height / -2, 1, 1000);
     orthoCamera.position.z = 5;
 
-    renderer.autoClear = false;
-    const containers = el.sceneEl.containers;
+    el.frustumMatrix.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
+    el.frustum.setFromProjectionMatrix(el.frustumMatrix);
 
     //sort containers by distance to camera
     el.camPos = camera.getWorldPosition(el.camPos);
@@ -40,17 +47,17 @@ AFRAME.registerComponent('csdt-container-renderer', {
     const textures = [];
 
     containers.forEach((obj) => {
-      const el = obj.el;
-      if (!el) return;
-      if (el.connection_established !== true) return;
+      if (!obj.el) return;
+      if (obj.el.connection_established !== true) return;
+      if (el.frustum.intersectsObject(obj.el.containerMesh) === false) return;
 
-      if (++el.frames % el.frameSkips === 0) {
-        el.components['csdt-container'].syncData();
+      if (++obj.el.frames % obj.el.frameSkips === 0) {
+        obj.el.components['csdt-container'].syncData();
       }
 
       //read pixel data from child site
       const texture = new THREE.DataTexture(
-        el.pixels,
+        obj.el.pixels,
         width,
         height,
         THREE.RGBAFormat,
@@ -59,7 +66,7 @@ AFRAME.registerComponent('csdt-container-renderer', {
       );
 
       textures.push(texture);
-      containerMeshes.add(el.containerMesh);
+      containerMeshes.add(obj.el.containerMesh);
     });
 
     //render containers into stencil buffer
