@@ -50,7 +50,7 @@ AFRAME.registerComponent('csdt-container', {
     el.object3D.add(el.containerMesh);
 
     //create wireframe
-    if (data.enableWireframe == true) {
+    if (data.enableWireframe === true) {
       const geometry2 = new THREE.EdgesGeometry(geometry1);
       const material2 = new THREE.LineBasicMaterial({ color: '#ffffff' });
       const wireframe = new THREE.LineSegments(geometry2, material2);

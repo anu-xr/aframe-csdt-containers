@@ -20,11 +20,14 @@
       </a-entity>
 
       <!--Container-->
-      <a-entity
-        id="container"
+      <a-container
         position="-6 2.001 0"
-        csdt-container="href: page2.html; width: 6; height: 4; depth: 6; enableWireframe: true"
-      ></a-entity>
+        href="page2.html"
+        width="6"
+        height="4"
+        depth="6"
+        wireframe="true"
+      ></a-container>
       <a-text value="page2.html" position="-3 3.85 3" rotation="0 90 0" side="double"></a-text>
 
       <!--Environment-->
@@ -35,7 +38,7 @@
 
     <script>
       const scene = document.querySelector('a-scene');
-      const container = document.getElementById('container');
+      const container = document.querySelector('a-container');
 
       //stress test
       const num_containers = 0;

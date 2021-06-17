@@ -445,8 +445,9 @@ id) /*: string*/
 require('./csdt-container');
 require('./csdt-container-receiver');
 require('./csdt-container-renderer');
+require('./a-container');
 
-},{"./csdt-container":"PPNTz","./csdt-container-receiver":"6BgQA","./csdt-container-renderer":"2aZ0c"}],"PPNTz":[function(require,module,exports) {
+},{"./csdt-container":"PPNTz","./csdt-container-receiver":"6BgQA","./csdt-container-renderer":"2aZ0c","./a-container":"35NrL"}],"PPNTz":[function(require,module,exports) {
 var _libCsdtExport = require('./lib/csdt/export');
 AFRAME.registerComponent('csdt-container', {
   schema: {
@@ -508,7 +509,7 @@ AFRAME.registerComponent('csdt-container', {
     el.containerMesh.geometry.computeBoundingSphere();
     el.object3D.add(el.containerMesh);
     // create wireframe
-    if (data.enableWireframe == true) {
+    if (data.enableWireframe === true) {
       const geometry2 = new THREE.EdgesGeometry(geometry1);
       const material2 = new THREE.LineBasicMaterial({
         color: '#ffffff'
@@ -17039,6 +17040,20 @@ AFRAME.registerComponent('csdt-container-renderer', {
 
     gl.stencilMask(0xff);
     gl.disable(gl.STENCIL_TEST);
+  },
+});
+
+},{}],"35NrL":[function(require,module,exports) {
+AFRAME.registerPrimitive('a-container', {
+  defaultComponents: {
+    'csdt-container': {},
+  },
+  mappings: {
+    href: 'csdt-container.href',
+    width: 'csdt-container.width',
+    height: 'csdt-container.height',
+    depth: 'csdt-container.depth',
+    wireframe: 'csdt-container.enableWireframe',
   },
 });
 
