@@ -16998,16 +16998,16 @@ AFRAME.registerComponent('csdt-container-renderer', {
       el.appendChild(hand);
 
       //pass user input to child sites
-      this.handleInputEvent(hand, 'gripdown');
-      this.handleInputEvent(hand, 'gripup');
-      this.handleInputEvent(hand, 'pointup');
-      this.handleInputEvent(hand, 'pointdown');
-      this.handleInputEvent(hand, 'thumbup');
-      this.handleInputEvent(hand, 'thumbdown');
-      this.handleInputEvent(hand, 'pointingstart');
-      this.handleInputEvent(hand, 'pointingend');
-      this.handleInputEvent(hand, 'pistolstart');
-      this.handleInputEvent(hand, 'pistolend');
+      this.handleInputEvent(hand, 'gripdown', name);
+      this.handleInputEvent(hand, 'gripup', name);
+      this.handleInputEvent(hand, 'pointup', name);
+      this.handleInputEvent(hand, 'pointdown', name);
+      this.handleInputEvent(hand, 'thumbup', name);
+      this.handleInputEvent(hand, 'thumbdown', name);
+      this.handleInputEvent(hand, 'pointingstart', name);
+      this.handleInputEvent(hand, 'pointingend', name);
+      this.handleInputEvent(hand, 'pistolstart', name);
+      this.handleInputEvent(hand, 'pistolend', name);
 
       return hand;
     });
@@ -17016,7 +17016,7 @@ AFRAME.registerComponent('csdt-container-renderer', {
     el.handR = hands[1];
   },
 
-  handleInputEvent: function (source, event) {
+  handleInputEvent: function (source, event, name) {
     const el = this.el;
 
     source.addEventListener(event, () => {
@@ -17024,7 +17024,7 @@ AFRAME.registerComponent('csdt-container-renderer', {
       el.addEventListener(
         'tock',
         () => {
-          this.cameraInContainer(event);
+          this.cameraInContainer(`${event}-${name}`);
         },
         { once: true }
       );
