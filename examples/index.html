@@ -19,7 +19,7 @@
       </a-entity>
 
       <!--Container-->
-      <a-entity position="-6 2.001 0" csdt-container="href: page2.html; width: 6; height: 4; depth: 6; enableWireframe: true; enableText:true"></a-entity>
+      <a-entity id="container" position="-6 2.001 0" csdt-container="href: page2.html; width: 6; height: 4; depth: 6; enableWireframe: true; enableText:true"></a-entity>
 
       <!--Environment-->
       <a-sky color="#25a"></a-sky>
@@ -29,7 +29,7 @@
 
     <script>
       const scene = document.querySelector('a-scene');
-      const container = document.querySelector('a-container');
+      const container = document.querySelector('#container');
 
       //stress test
       const num_containers = 0;
