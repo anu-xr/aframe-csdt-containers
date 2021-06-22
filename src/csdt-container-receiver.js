@@ -79,8 +79,14 @@ AFRAME.registerComponent('csdt-container-receiver', {
 
         //send pixel data to parent
         //use an event rather than yjs to transfer data for performance reasons, el.pixels is very large
-        const response = new CustomEvent(`${CSDT.hash}-pixel-data`, { detail: el.pixels });
-        parent.document.dispatchEvent(response);
+        CSDT.dispatchEvent(`${CSDT.hash}-pixel-data`, el.pixels);
+      });
+
+      //when the parent requests a preview
+      document.addEventListener('CSDT-preview', () => {
+        const scene = el.sceneEl.object3D;
+
+        CSDT.dispatchEvent('CSDT-preview-response', scene.toJSON());
       });
     });
   },

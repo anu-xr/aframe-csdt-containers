@@ -448,6 +448,7 @@ require('./csdt-container-renderer');
 
 },{"./csdt-container":"PPNTz","./csdt-container-receiver":"6BgQA","./csdt-container-renderer":"2aZ0c"}],"PPNTz":[function(require,module,exports) {
 var _libCsdtExport = require('./lib/csdt/export');
+var _utils = require('./utils');
 AFRAME.registerComponent('csdt-container', {
   schema: {
     href: {
@@ -466,6 +467,9 @@ AFRAME.registerComponent('csdt-container', {
       default: true
     },
     enableExternalRendering: {
+      default: true
+    },
+    enablePreview: {
       default: true
     },
     enableInteraction: {
@@ -544,7 +548,7 @@ AFRAME.registerComponent('csdt-container', {
       el.appendChild(text);
     }
     // initlize iframe
-    if (data.enableExternalRendering === true) {
+    if (data.enableInstantInitialization === true) {
       this.initializeIframe();
     }
     el.initializeIframe = () => this.initializeIframe();
@@ -567,6 +571,24 @@ AFRAME.registerComponent('csdt-container', {
       CSDT.openConnection('container').then(res => {
         if (res === true) {
           el.connection_established = true;
+          // load a preview model
+          if (data.enablePreview === true) {
+            if (data.enableExternalRendering === true) return;
+            document.addEventListener('CSDT-preview-response', res => {
+              const loader = new THREE.ObjectLoader();
+              loader.parse(res.detail, obj => {
+                obj.name = 'preview';
+                obj.position.y -= data.height / 2;
+                const blacklist = ['AmbientLight', 'DirectionalLight'];
+                _utils.deepRemoveTypes(obj, blacklist);
+                el.object3D.add(obj);
+                el.previewObj = obj;
+              });
+            }, {
+              once: true
+            });
+            CSDT.dispatchEvent('CSDT-preview');
+          }
         }
       });
     });
@@ -623,7 +645,7 @@ AFRAME.registerComponent('csdt-container', {
   }
 });
 
-},{"./lib/csdt/export":"27RSa"}],"27RSa":[function(require,module,exports) {
+},{"./lib/csdt/export":"27RSa","./utils":"3EQWo"}],"27RSa":[function(require,module,exports) {
 var global = arguments[3];
 var define;
 // modules are defined as an array
@@ -16891,6 +16913,105 @@ var define;
   }]
 }, ["gKhix", "556pz"], "556pz", "parcelRequirecf62");
 
+},{}],"3EQWo":[function(require,module,exports) {
+var _parcelHelpers = require("@parcel/transformer-js/lib/esmodule-helpers.js");
+_parcelHelpers.defineInteropFlag(exports);
+_parcelHelpers.export(exports, "deepSearchForTypes", function () {
+  return deepSearchForTypes;
+});
+_parcelHelpers.export(exports, "deepRemoveTypes", function () {
+  return deepRemoveTypes;
+});
+_parcelHelpers.export(exports, "deepRemoveIds", function () {
+  return deepRemoveIds;
+});
+function deepSearchForTypes(obj, types) {
+  const found = [];
+  if (types.includes(obj.type)) found.push(obj);
+  if (obj.children.length > 0) {
+    obj.children.forEach(child => found.push(...deepSearchForTypes(child, types)));
+  }
+  return found;
+}
+function deepRemoveTypes(obj, types, includeObj = false) {
+  const removed = [];
+  if (includeObj == true) {
+    if (types.includes(obj.type)) {
+      removed.push(obj);
+      return [undefined, removed];
+    }
+  }
+  if (obj.children.length > 0) {
+    obj.children.forEach(child => {
+      const [cObj, cRemoved] = deepRemoveTypes(child, types, true);
+      removed.push(...cRemoved);
+      if (!cObj) obj.remove(child);
+    });
+  }
+  return [obj, removed];
+}
+function deepRemoveIds(obj, ids, includeObj = false) {
+  const removed = [];
+  if (includeObj == true) {
+    if (obj.el) {
+      if (ids.includes(obj.el.id)) {
+        removed.push(obj);
+        return [undefined, removed];
+      }
+    }
+  }
+  if (obj.children.length > 0) {
+    obj.children.forEach(child => {
+      const [cObj, cRemoved] = deepRemoveIds(child, ids, true);
+      removed.push(...cRemoved);
+      if (!cObj) obj.remove(child);
+    });
+  }
+  return [obj, removed];
+}
+
+},{"@parcel/transformer-js/lib/esmodule-helpers.js":"5gA8y"}],"5gA8y":[function(require,module,exports) {
+"use strict";
+
+exports.interopDefault = function (a) {
+  return a && a.__esModule ? a : {
+    default: a
+  };
+};
+
+exports.defineInteropFlag = function (a) {
+  Object.defineProperty(a, '__esModule', {
+    value: true
+  });
+};
+
+exports.exportAll = function (source, dest) {
+  Object.keys(source).forEach(function (key) {
+    if (key === 'default' || key === '__esModule') {
+      return;
+    } // Skip duplicate re-exports when they have the same value.
+
+
+    if (key in dest && dest[key] === source[key]) {
+      return;
+    }
+
+    Object.defineProperty(dest, key, {
+      enumerable: true,
+      get: function () {
+        return source[key];
+      }
+    });
+  });
+  return dest;
+};
+
+exports.export = function (dest, destName, get) {
+  Object.defineProperty(dest, destName, {
+    enumerable: true,
+    get: get
+  });
+};
 },{}],"6BgQA":[function(require,module,exports) {
 var _libCsdtExport = require('./lib/csdt/export');
 AFRAME.registerComponent('csdt-container-receiver', {
@@ -16954,10 +17075,12 @@ AFRAME.registerComponent('csdt-container-receiver', {
         renderer.readRenderTargetPixels(el.renderTarget, 0, 0, el.canvasWidth, el.canvasHeight, el.pixels);
         // send pixel data to parent
         // use an event rather than yjs to transfer data for performance reasons, el.pixels is very large
-        const response = new CustomEvent(`${CSDT.hash}-pixel-data`, {
-          detail: el.pixels
-        });
-        parent.document.dispatchEvent(response);
+        CSDT.dispatchEvent(`${CSDT.hash}-pixel-data`, el.pixels);
+      });
+      // when the parent requests a preview
+      document.addEventListener('CSDT-preview', () => {
+        const scene = el.sceneEl.object3D;
+        CSDT.dispatchEvent('CSDT-preview-response', scene.toJSON());
       });
     });
   },
@@ -17112,8 +17235,11 @@ AFRAME.registerComponent('csdt-container-renderer', {
 
       if (obj.data.enableExternalRendering === false) {
         const isInContainer = this.isCameraInMesh(camera, obj.el.containerMesh);
+        if (obj.el.previewObj) obj.el.previewObj.visible = true;
+
         if (isInContainer === false) return;
 
+        if (obj.el.previewObj) obj.el.previewObj.visible = false;
         if (!obj.el.iframe) obj.el.initializeIframe();
       }
 

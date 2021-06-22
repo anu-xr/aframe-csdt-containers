@@ -128,8 +128,11 @@ AFRAME.registerComponent('csdt-container-renderer', {
 
       if (obj.data.enableExternalRendering === false) {
         const isInContainer = this.isCameraInMesh(camera, obj.el.containerMesh);
+        if (obj.el.previewObj) obj.el.previewObj.visible = true;
+
         if (isInContainer === false) return;
 
+        if (obj.el.previewObj) obj.el.previewObj.visible = false;
         if (!obj.el.iframe) obj.el.initializeIframe();
       }
 
