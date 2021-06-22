@@ -462,6 +462,9 @@ AFRAME.registerComponent('csdt-container', {
     depth: {
       default: 8
     },
+    enableInstantInitialization: {
+      default: true
+    },
     enableExternalRendering: {
       default: true
     },
@@ -540,10 +543,21 @@ AFRAME.registerComponent('csdt-container', {
       text.setAttribute('side', 'double');
       el.appendChild(text);
     }
+    // initlize iframe
+    if (data.enableExternalRendering === true) {
+      this.initializeIframe();
+    }
+    el.initializeIframe = () => this.initializeIframe();
+    this.syncCanvasSize = AFRAME.utils.throttle(this.syncCanvasSize, 3000, this);
+  },
+  initializeIframe: function () {
+    const el = this.el;
+    const data = this.data;
     // create iframe
     const iframe = el.iframe = document.createElement('iframe');
     iframe.src = data.href;
-    document.body.appendChild(iframe);
+    document.body.appendChild(el.iframe);
+    // create CSDT
     const CSDT = el.CSDT = new _libCsdtExport.CSDTParent(iframe);
     const ydoc = el.CSDT.ydoc;
     el.ymap = ydoc.getMap(CSDT.hash);
@@ -560,7 +574,6 @@ AFRAME.registerComponent('csdt-container', {
     document.addEventListener(`${CSDT.hash}-pixel-data`, e => {
       el.pixels = new Uint8Array(e.detail);
     });
-    this.syncCanvasSize = AFRAME.utils.throttle(this.syncCanvasSize, 3000, this);
   },
   update: function () {
     const el = this.el;
@@ -17017,17 +17030,17 @@ AFRAME.registerComponent('csdt-container-renderer', {
     el.handL = hands[0];
     el.handR = hands[1];
   },
-  
+
   isCameraInMesh: function (camera, mesh) {
-    const el = this.el
+    const el = this.el;
 
     el.raycaster.setFromCamera(el.raycastCoords, camera);
     const intersects = el.raycaster.intersectObject(mesh);
 
-    if (intersects.length % 2 === 1) return true
-    return false
+    if (intersects.length % 2 === 1) return true;
+    return false;
   },
-  
+
   handleInputEvent: function (source, event, name) {
     const el = this.el;
     const containers = el.sceneEl.containers;
@@ -17036,11 +17049,12 @@ AFRAME.registerComponent('csdt-container-renderer', {
     source.addEventListener(event, () => {
       //after an input, run this code on the next tock
       el.addEventListener(
-        'tock', () => {
+        'tock',
+        () => {
           //see if the user is inside a container
           containers.forEach((obj) => {
             const mesh = obj.el.containerMesh;
-            const isInContainer = this.isCameraInMesh(camera, mesh)
+            const isInContainer = this.isCameraInMesh(camera, mesh);
 
             if (isInContainer === true) {
               //send input to child site
@@ -17052,7 +17066,6 @@ AFRAME.registerComponent('csdt-container-renderer', {
       );
     });
   },
-
 
   tock: function () {
     const el = this.el;
@@ -17095,13 +17108,16 @@ AFRAME.registerComponent('csdt-container-renderer', {
 
     containers.forEach((obj) => {
       if (!obj.el) return;
-      if (obj.el.connection_established !== true) return;
       if (el.frustum.intersectsObject(obj.el.containerMesh) === false) return;
 
       if (obj.data.enableExternalRendering === false) {
-        const isInContainer = this.isCameraInMesh(camera, obj.el.containerMesh)
-        if (isInContainer === false) return
+        const isInContainer = this.isCameraInMesh(camera, obj.el.containerMesh);
+        if (isInContainer === false) return;
+
+        if (!obj.el.iframe) obj.el.initializeIframe();
       }
+
+      if (obj.el.connection_established !== true) return;
 
       if (++obj.el.frames % obj.el.frameSkips === 0) {
         obj.el.components['csdt-container'].syncData();
@@ -17146,6 +17162,7 @@ AFRAME.registerComponent('csdt-container-renderer', {
     gl.disable(gl.STENCIL_TEST);
   },
 });
+
 },{}]},["3ydNP","556pz"], "556pz", "parcelRequireb2de")
 
 //# sourceMappingURL=export.js.map

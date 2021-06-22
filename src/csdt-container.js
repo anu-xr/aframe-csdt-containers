@@ -6,7 +6,8 @@ AFRAME.registerComponent('csdt-container', {
     width: { default: 8 },
     height: { default: 8 },
     depth: { default: 8 },
-    enableExternalRendering: {default: true},
+    enableInstantInitialization: { default: true },
+    enableExternalRendering: { default: true },
     enableInteraction: { default: true },
     enableText: { default: false },
     enableWireframe: { default: false },
@@ -72,11 +73,26 @@ AFRAME.registerComponent('csdt-container', {
       el.appendChild(text);
     }
 
+    //initlize iframe
+    if (data.enableExternalRendering === true) {
+      this.initializeIframe();
+    }
+
+    el.initializeIframe = () => this.initializeIframe();
+
+    this.syncCanvasSize = AFRAME.utils.throttle(this.syncCanvasSize, 3000, this);
+  },
+
+  initializeIframe: function () {
+    const el = this.el;
+    const data = this.data;
+
     //create iframe
     const iframe = (el.iframe = document.createElement('iframe'));
     iframe.src = data.href;
-    document.body.appendChild(iframe);
+    document.body.appendChild(el.iframe);
 
+    //create CSDT
     const CSDT = (el.CSDT = new CSDTParent(iframe));
     const ydoc = el.CSDT.ydoc;
     el.ymap = ydoc.getMap(CSDT.hash);
@@ -95,8 +111,6 @@ AFRAME.registerComponent('csdt-container', {
     document.addEventListener(`${CSDT.hash}-pixel-data`, (e) => {
       el.pixels = new Uint8Array(e.detail);
     });
-
-    this.syncCanvasSize = AFRAME.utils.throttle(this.syncCanvasSize, 3000, this);
   },
 
   update: function () {
