@@ -115,13 +115,9 @@ AFRAME.registerComponent('csdt-container', {
               (res) => {
                 const loader = new THREE.ObjectLoader();
                 loader.parse(res.detail, (obj) => {
-                  obj.name = 'preview';
                   obj.position.y -= data.height / 2;
+                  obj.position.add(el.object3D.getWorldPosition(new THREE.Vector3()));
 
-                  const blacklist = ['AmbientLight', 'DirectionalLight'];
-                  deepRemoveTypes(obj, blacklist);
-
-                  el.object3D.add(obj);
                   el.previewObj = obj;
                 });
               },
