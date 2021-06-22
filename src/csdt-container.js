@@ -6,6 +6,7 @@ AFRAME.registerComponent('csdt-container', {
     width: { default: 8 },
     height: { default: 8 },
     depth: { default: 8 },
+    enableExternalRendering: {default: true},
     enableInteraction: { default: true },
     enableText: { default: false },
     enableWireframe: { default: false },

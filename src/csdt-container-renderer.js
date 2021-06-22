@@ -46,41 +46,42 @@ AFRAME.registerComponent('csdt-container-renderer', {
     el.handL = hands[0];
     el.handR = hands[1];
   },
+  
+  isCameraInMesh: function (camera, mesh) {
+    const el = this.el
 
+    el.raycaster.setFromCamera(el.raycastCoords, camera);
+    const intersects = el.raycaster.intersectObject(mesh);
+
+    if (intersects.length % 2 === 1) return true
+    return false
+  },
+  
   handleInputEvent: function (source, event, name) {
     const el = this.el;
+    const containers = el.sceneEl.containers;
+    const camera = el.sceneEl.camera;
 
     source.addEventListener(event, () => {
       //after an input, run this code on the next tock
       el.addEventListener(
-        'tock',
-        () => {
-          this.cameraInContainer(`${event}-${name}`);
+        'tock', () => {
+          //see if the user is inside a container
+          containers.forEach((obj) => {
+            const mesh = obj.el.containerMesh;
+            const isInContainer = this.isCameraInMesh(camera, mesh)
+
+            if (isInContainer === true) {
+              //send input to child site
+              obj.el.CSDT.dispatchEvent(`${event}-${name}`);
+            }
+          });
         },
         { once: true }
       );
     });
   },
 
-  cameraInContainer: function (eventName) {
-    const el = this.el;
-    const containers = el.sceneEl.containers;
-    const camera = el.sceneEl.camera;
-
-    //see if the user is inside a container
-    containers.forEach((obj) => {
-      const mesh = obj.el.containerMesh;
-
-      el.raycaster.setFromCamera(el.raycastCoords, camera);
-      const intersects = el.raycaster.intersectObject(mesh);
-
-      if (intersects.length % 2 === 1) {
-        //user is in container
-        //send input to child site
-        obj.el.CSDT.dispatchEvent(eventName);
-      }
-    });
-  },
 
   tock: function () {
     const el = this.el;
@@ -125,6 +126,11 @@ AFRAME.registerComponent('csdt-container-renderer', {
       if (!obj.el) return;
       if (obj.el.connection_established !== true) return;
       if (el.frustum.intersectsObject(obj.el.containerMesh) === false) return;
+
+      if (obj.data.enableExternalRendering === false) {
+        const isInContainer = this.isCameraInMesh(camera, obj.el.containerMesh)
+        if (isInContainer === false) return
+      }
 
       if (++obj.el.frames % obj.el.frameSkips === 0) {
         obj.el.components['csdt-container'].syncData();
