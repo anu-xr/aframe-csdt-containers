@@ -576,7 +576,7 @@ AFRAME.registerComponent('csdt-container', {
             if (data.enableExternalRendering === true) return;
             document.addEventListener('CSDT-preview-response', res => {
               const loader = new THREE.ObjectLoader();
-              loader.parse(res.detail, obj => {
+              loader.parse(JSON.parse(String(res.detail)), obj => {
                 obj.position.y -= data.height / 2;
                 obj.position.add(el.object3D.getWorldPosition(new THREE.Vector3()));
                 el.previewObj = obj;
@@ -17077,7 +17077,7 @@ AFRAME.registerComponent('csdt-container-receiver', {
       // when the parent requests a preview
       document.addEventListener('CSDT-preview', () => {
         const scene = el.sceneEl.object3D;
-        CSDT.dispatchEvent('CSDT-preview-response', scene.toJSON());
+        CSDT.dispatchEvent('CSDT-preview-response', JSON.stringify(scene.toJSON()));
       });
     });
   },

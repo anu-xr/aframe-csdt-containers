@@ -86,7 +86,7 @@ AFRAME.registerComponent('csdt-container-receiver', {
       document.addEventListener('CSDT-preview', () => {
         const scene = el.sceneEl.object3D;
 
-        CSDT.dispatchEvent('CSDT-preview-response', scene.toJSON());
+        CSDT.dispatchEvent('CSDT-preview-response', JSON.stringify(scene.toJSON()));
       });
     });
   },

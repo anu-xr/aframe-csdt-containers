@@ -114,7 +114,7 @@ AFRAME.registerComponent('csdt-container', {
               'CSDT-preview-response',
               (res) => {
                 const loader = new THREE.ObjectLoader();
-                loader.parse(res.detail, (obj) => {
+                loader.parse(JSON.parse(String(res.detail)), (obj) => {
                   obj.position.y -= data.height / 2;
                   obj.position.add(el.object3D.getWorldPosition(new THREE.Vector3()));
 
