@@ -1,4 +1,4 @@
-import { CSDTChild } from './lib/csdt/export';
+import { CSDTChild } from '../CSDT/dist/export';
 
 AFRAME.registerComponent('csdt-container-receiver', {
   schema: {

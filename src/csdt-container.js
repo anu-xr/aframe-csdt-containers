@@ -1,4 +1,4 @@
-import { CSDTParent } from './lib/csdt/export';
+import { CSDTParent } from '../CSDT/dist/export';
 import { deepRemoveTypes } from './utils';
 
 AFRAME.registerComponent('csdt-container', {
