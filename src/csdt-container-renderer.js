@@ -121,6 +121,7 @@ AFRAME.registerComponent('csdt-container-renderer', {
 
     const containerMeshes = new THREE.Group();
     const textures = [];
+    const previews = [];
 
     containers.forEach((obj) => {
       if (!obj.el) return;
@@ -128,7 +129,14 @@ AFRAME.registerComponent('csdt-container-renderer', {
 
       if (obj.data.enableExternalRendering === false) {
         const isInContainer = this.isCameraInMesh(camera, obj.el.containerMesh);
-        if (isInContainer === false) return;
+
+        if (isInContainer === false) {
+          if (!obj.el.previewObj) return;
+
+          previews.push(obj.el.previewObj);
+          containerMeshes.add(obj.el.containerMesh);
+          return;
+        }
 
         if (!obj.el.iframe) obj.el.initializeIframe();
       }
@@ -167,6 +175,10 @@ AFRAME.registerComponent('csdt-container-renderer', {
     renderer.clearDepth();
     gl.stencilFunc(gl.EQUAL, 1, 0xff);
     gl.stencilMask(0x00);
+
+    previews.forEach((obj) => {
+      renderer.render(obj, camera);
+    });
 
     textures.forEach((texture) => {
       el.renderingPlane.material.map = texture;

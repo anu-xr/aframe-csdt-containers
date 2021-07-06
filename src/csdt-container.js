@@ -1,4 +1,5 @@
-import { CSDTParent } from './lib/csdt/export';
+import { CSDTParent } from '../CSDT/dist/export';
+import { deepRemoveTypes } from './utils';
 
 AFRAME.registerComponent('csdt-container', {
   schema: {
@@ -8,6 +9,7 @@ AFRAME.registerComponent('csdt-container', {
     depth: { default: 8 },
     enableInstantInitialization: { default: true },
     enableExternalRendering: { default: true },
+    enablePreview: { default: true },
     enableInteraction: { default: true },
     enableText: { default: false },
     enableWireframe: { default: false },
@@ -74,7 +76,7 @@ AFRAME.registerComponent('csdt-container', {
     }
 
     //initlize iframe
-    if (data.enableExternalRendering === true) {
+    if (data.enableInstantInitialization === true) {
       this.initializeIframe();
     }
 
@@ -103,6 +105,27 @@ AFRAME.registerComponent('csdt-container', {
       CSDT.openConnection('container').then((res) => {
         if (res === true) {
           el.connection_established = true;
+
+          //load a preview model
+          if (data.enablePreview === true) {
+            if (data.enableExternalRendering === true) return;
+
+            document.addEventListener(
+              'CSDT-preview-response',
+              (res) => {
+                const loader = new THREE.ObjectLoader();
+                loader.parse(JSON.parse(String(res.detail)), (obj) => {
+                  obj.position.y -= data.height / 2;
+                  obj.position.add(el.object3D.getWorldPosition(new THREE.Vector3()));
+
+                  el.previewObj = obj;
+                });
+              },
+              { once: true }
+            );
+
+            CSDT.dispatchEvent('CSDT-preview');
+          }
         }
       });
     });
