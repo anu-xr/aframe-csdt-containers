@@ -1,5 +1,5 @@
-import { CSDTParent } from '../CSDT/dist/export';
-import { deepRemoveTypes } from './utils';
+import CSDT from '../CSDT/dist/csdt';
+import { customMessages } from './constants';
 
 AFRAME.registerComponent('csdt-container', {
   schema: {
@@ -29,6 +29,10 @@ AFRAME.registerComponent('csdt-container', {
     el.camPos = new THREE.Vector3();
     el.camQuat = new THREE.Quaternion();
     el.containerPos = new THREE.Vector3();
+    el.connectionId = Math.random();
+
+    //initialize CSDT if needed
+    if (!window.CSDT) window.CSDT = new CSDT();
 
     //if there is not already a csdt-container-renderer entity, create one
     if (
@@ -89,49 +93,36 @@ AFRAME.registerComponent('csdt-container', {
     const el = this.el;
     const data = this.data;
 
-    //create iframe
-    const iframe = (el.iframe = document.createElement('iframe'));
-    iframe.src = data.href;
-    document.body.appendChild(el.iframe);
+    const CSDT = window.CSDT;
+    customMessages.forEach((msg) => CSDT.createMessage(...msg));
+    el.conn = CSDT.openConnection(data.href, el.connectionId);
 
-    //create CSDT
-    const CSDT = (el.CSDT = new CSDTParent(iframe));
     const ydoc = el.CSDT.ydoc;
     el.ymap = ydoc.getMap(CSDT.hash);
 
-    //wait for iframe to fully load
-    iframe.addEventListener('load', () => {
-      //open a CSDT connection
-      CSDT.openConnection('container').then((res) => {
-        if (res === true) {
-          el.connection_established = true;
+    //load a preview
+    if (data.enablePreview === true) {
+      if (data.enableExternalRendering === true) return;
 
-          //load a preview model
-          if (data.enablePreview === true) {
-            if (data.enableExternalRendering === true) return;
+      document.addEventListener(
+        CSDT.messages.preview.getResponseTextFromChild(el.conn.hash),
+        (res) => {
+          const loader = new THREE.ObjectLoader();
+          loader.parse(JSON.parse(String(res.detail)), (obj) => {
+            obj.position.y -= data.height / 2;
+            obj.position.add(el.object3D.getWorldPosition(new THREE.Vector3()));
 
-            document.addEventListener(
-              'CSDT-preview-response',
-              (res) => {
-                const loader = new THREE.ObjectLoader();
-                loader.parse(JSON.parse(String(res.detail)), (obj) => {
-                  obj.position.y -= data.height / 2;
-                  obj.position.add(el.object3D.getWorldPosition(new THREE.Vector3()));
+            el.previewObj = obj;
+          });
+        },
+        { once: true }
+      );
 
-                  el.previewObj = obj;
-                });
-              },
-              { once: true }
-            );
-
-            CSDT.dispatchEvent('CSDT-preview');
-          }
-        }
-      });
-    });
+      el.conn.sendMessage(CSDT.messages.preview);
+    }
 
     //receive pixel data
-    document.addEventListener(`${CSDT.hash}-pixel-data`, (e) => {
+    document.addEventListener(CSDT.messages.pixel.getText(), (e) => {
       el.pixels = new Uint8Array(e.detail);
     });
   },
@@ -197,6 +188,6 @@ AFRAME.registerComponent('csdt-container', {
     });
 
     //tell child to render
-    el.CSDT.dispatchEvent('CSDT-render');
+    el.conn.sendMessage(window.CSDT.messages.render);
   },
 });

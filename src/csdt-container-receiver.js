@@ -1,4 +1,4 @@
-import { CSDTChild } from '../CSDT/dist/export';
+import CSDT from '../CSDT/dist/csdt';
 
 AFRAME.registerComponent('csdt-container-receiver', {
   schema: {
@@ -10,6 +10,12 @@ AFRAME.registerComponent('csdt-container-receiver', {
     const data = this.data;
     const renderer = el.sceneEl.renderer;
 
+    //initialize CSDT if needed
+    if (!window.CSDT) window.CSDT = new CSDT();
+    const CSDT = window.CSDT;
+    const conn = CSDT.connections.parent;
+    customMessages.forEach((msg) => CSDT.createMessage(...msg));
+
     el.connection_opened = false;
     const CSDT = (el.CSDT = new CSDTChild());
     el.camPos = new THREE.Vector3();
@@ -18,7 +24,7 @@ AFRAME.registerComponent('csdt-container-receiver', {
     if (document.querySelector(data.player)) el.player = document.querySelector(data.player).object3D;
     else el.player = el.sceneEl.camera.el.object3D;
 
-    document.addEventListener('CSDT-connection-open', () => {
+    document.addEventListener(CSDT.messages.open.getTextFromParent(), () => {
       el.connection_opened = true;
       CSDT.responseConnectionOpen(true);
 
@@ -59,7 +65,7 @@ AFRAME.registerComponent('csdt-container-receiver', {
       });
 
       //when the parent site tells us to render
-      document.addEventListener('CSDT-render', () => {
+      document.addEventListener(CSDT.messages.render.getTextFromParent(), () => {
         const el = this.el;
         const sceneEl = el.sceneEl;
         const renderer = sceneEl.renderer;
@@ -79,14 +85,14 @@ AFRAME.registerComponent('csdt-container-receiver', {
 
         //send pixel data to parent
         //use an event rather than yjs to transfer data for performance reasons, el.pixels is very large
-        CSDT.dispatchEvent(`${CSDT.hash}-pixel-data`, el.pixels);
+        conn.sendMessage(CSDT.messages.pixel, el.pixels);
       });
 
       //when the parent requests a preview
-      document.addEventListener('CSDT-preview', () => {
+      document.addEventListener(CSDT.messages.preview.getTextFromParent(), () => {
         const scene = el.sceneEl.object3D;
 
-        CSDT.dispatchEvent('CSDT-preview-response', JSON.stringify(scene.toJSON()));
+        conn.sendResponse(CSDT.messages.preview, JSON.stringify(scene.toJSON()));
       });
     });
   },
