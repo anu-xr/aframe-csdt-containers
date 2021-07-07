@@ -17,7 +17,6 @@ AFRAME.registerComponent('csdt-container-receiver', {
     customMessages.forEach((msg) => CSDT.createMessage(...msg));
 
     el.connection_opened = false;
-    const CSDT = (el.CSDT = new CSDTChild());
     el.camPos = new THREE.Vector3();
     el.camQuat = new THREE.Quaternion();
 

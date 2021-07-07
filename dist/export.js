@@ -140,9 +140,9 @@
       this[globalName] = mainExports;
     }
   }
-})({"3ydNP":[function(require,module,exports) {
+})({"3Ue0W":[function(require,module,exports) {
 var HMR_HOST = null;
-var HMR_PORT = 1234;
+var HMR_PORT = 53733;
 var HMR_SECURE = false;
 var HMR_ENV_HASH = "d751713988987e9331980363e24189ce";
 module.bundle.HMR_BUNDLE_ID = "dcd721b617217ecd3e90b74d2c08edc6";
@@ -447,8 +447,10 @@ require('./csdt-container-receiver');
 require('./csdt-container-renderer');
 
 },{"./csdt-container":"PPNTz","./csdt-container-receiver":"6BgQA","./csdt-container-renderer":"2aZ0c"}],"PPNTz":[function(require,module,exports) {
-var _libCsdtExport = require('./lib/csdt/export');
-require('./utils');
+var _CSDTDistCsdt = require('../CSDT/dist/csdt');
+var _parcelHelpers = require("@parcel/transformer-js/lib/esmodule-helpers.js");
+var _CSDTDistCsdtDefault = _parcelHelpers.interopDefault(_CSDTDistCsdt);
+var _constants = require('./constants');
 AFRAME.registerComponent('csdt-container', {
   schema: {
     href: {
@@ -501,6 +503,9 @@ AFRAME.registerComponent('csdt-container', {
     el.camPos = new THREE.Vector3();
     el.camQuat = new THREE.Quaternion();
     el.containerPos = new THREE.Vector3();
+    el.connectionId = Math.random();
+    // initialize CSDT if needed
+    if (!window.CSDT) window.CSDT = new _CSDTDistCsdtDefault.default();
     // if there is not already a csdt-container-renderer entity, create one
     if (Array.from(el.sceneEl.children).reduce((acc, c) => acc || c.hasAttribute('csdt-container-renderer'), false) === false) {
       const entity = document.createElement('a-entity');
@@ -557,40 +562,28 @@ AFRAME.registerComponent('csdt-container', {
   initializeIframe: function () {
     const el = this.el;
     const data = this.data;
-    // create iframe
-    const iframe = el.iframe = document.createElement('iframe');
-    iframe.src = data.href;
-    document.body.appendChild(el.iframe);
-    // create CSDT
-    const CSDT = el.CSDT = new _libCsdtExport.CSDTParent(iframe);
+    const CSDT = window.CSDT;
+    _constants.customMessages.forEach(msg => CSDT.createMessage(...msg));
+    el.conn = CSDT.openConnection(data.href, el.connectionId);
     const ydoc = el.CSDT.ydoc;
     el.ymap = ydoc.getMap(CSDT.hash);
-    // wait for iframe to fully load
-    iframe.addEventListener('load', () => {
-      // open a CSDT connection
-      CSDT.openConnection('container').then(res => {
-        if (res === true) {
-          el.connection_established = true;
-          // load a preview model
-          if (data.enablePreview === true) {
-            if (data.enableExternalRendering === true) return;
-            document.addEventListener('CSDT-preview-response', res => {
-              const loader = new THREE.ObjectLoader();
-              loader.parse(JSON.parse(String(res.detail)), obj => {
-                obj.position.y -= data.height / 2;
-                obj.position.add(el.object3D.getWorldPosition(new THREE.Vector3()));
-                el.previewObj = obj;
-              });
-            }, {
-              once: true
-            });
-            CSDT.dispatchEvent('CSDT-preview');
-          }
-        }
+    // load a preview
+    if (data.enablePreview === true) {
+      if (data.enableExternalRendering === true) return;
+      document.addEventListener(CSDT.messages.preview.getResponseTextFromChild(el.conn.hash), res => {
+        const loader = new THREE.ObjectLoader();
+        loader.parse(JSON.parse(String(res.detail)), obj => {
+          obj.position.y -= data.height / 2;
+          obj.position.add(el.object3D.getWorldPosition(new THREE.Vector3()));
+          el.previewObj = obj;
+        });
+      }, {
+        once: true
       });
-    });
+      el.conn.sendMessage(CSDT.messages.preview);
+    }
     // receive pixel data
-    document.addEventListener(`${CSDT.hash}-pixel-data`, e => {
+    document.addEventListener(CSDT.messages.pixel.getText(), e => {
       el.pixels = new Uint8Array(e.detail);
     });
   },
@@ -638,11 +631,11 @@ AFRAME.registerComponent('csdt-container', {
       ymap.set('cameraQuaternion', el.camQuat.toArray());
     });
     // tell child to render
-    el.CSDT.dispatchEvent('CSDT-render');
+    el.conn.sendMessage(window.CSDT.messages.render);
   }
 });
 
-},{"./lib/csdt/export":"27RSa","./utils":"3EQWo"}],"27RSa":[function(require,module,exports) {
+},{"../CSDT/dist/csdt":"b1pkp","./constants":"5vBc0","@parcel/transformer-js/lib/esmodule-helpers.js":"5gA8y"}],"b1pkp":[function(require,module,exports) {
 var global = arguments[3];
 var define;
 // modules are defined as an array
@@ -739,12 +732,12 @@ var define;
     }
   }
 })({
-  "gKhix": [function (require, module, exports) {
+  "5p6Wz": [function (require, module, exports) {
     var HMR_HOST = null;
-    var HMR_PORT = 59101;
+    var HMR_PORT = 53732;
     var HMR_SECURE = false;
     var HMR_ENV_HASH = "d751713988987e9331980363e24189ce";
-    module.bundle.HMR_BUNDLE_ID = "dcd721b617217ecd3e90b74d2c08edc6";
+    module.bundle.HMR_BUNDLE_ID = "9efd05a65559a3255aae87197b5561fd";
     // @flow
     /*global HMR_HOST, HMR_PORT, HMR_ENV_HASH, HMR_SECURE*/
     /*::
@@ -1036,82 +1029,113 @@ var define;
       acceptedAssets[id] = true;
     }
   }, {}],
-  "556pz": [function (require, module, exports) {
+  "2pld4": [function (require, module, exports) {
     var _parcelHelpers = require("@parcel/transformer-js/lib/esmodule-helpers.js");
     _parcelHelpers.defineInteropFlag(exports);
-    var _parent = require('./parent');
-    _parcelHelpers.exportAll(_parent, exports);
-    var _child = require('./child');
-    _parcelHelpers.exportAll(_child, exports);
-  }, {
-    "./parent": "6nlkj",
-    "./child": "6nDp4",
-    "@parcel/transformer-js/lib/esmodule-helpers.js": "5gA8y"
-  }],
-  "6nlkj": [function (require, module, exports) {
-    var _parcelHelpers = require("@parcel/transformer-js/lib/esmodule-helpers.js");
-    _parcelHelpers.defineInteropFlag(exports);
-    _parcelHelpers.export(exports, "CSDTParent", function () {
-      return CSDTParent;
-    });
-    var _base = require('./base');
-    var _baseDefault = _parcelHelpers.interopDefault(_base);
-    class CSDTParent extends _baseDefault.default {
-      constructor(iframe) {
-        super();
-        this.iframe = iframe;
-        this.hash = Math.random().toString(36).substring(2, 15);
+    var _Connection = require('./Connection');
+    var _ConnectionDefault = _parcelHelpers.interopDefault(_Connection);
+    var _ParentConnection = require('./ParentConnection');
+    var _ParentConnectionDefault = _parcelHelpers.interopDefault(_ParentConnection);
+    var _Message = require('./Message');
+    var _MessageDefault = _parcelHelpers.interopDefault(_Message);
+    var _constants = require('./constants');
+    class CSDT {
+      constructor() {
+        this.messages = {
+          ..._constants.INTERNAL_MESSAGES
+        };
+        this.connections = {
+          parent: new _ParentConnectionDefault.default()
+        };
       }
-      /*returns a promise that resolves with a response from the child site*/
-      openConnection(connectionType) {
-        return new Promise((resolve, _reject) => {
-          window.document.addEventListener('CSDT-response-connection-open', e => resolve(Boolean(e.detail)), {
-            once: true
-          });
-          const data = {
-            connectionType: String(connectionType),
-            hash: this.hash
-          };
-          this.dispatchEvent('CSDT-connection-open', data);
-        });
+      openConnection(url, id) {
+        const connection = new _ConnectionDefault.default(url);
+        if (this.connections[id]) this.closeConnection(id);
+        this.connections[id] = connection;
+      }
+      closeConnection(id) {
+        this.connections[id].iframe.remove();
+        delete this.connections[id];
+      }
+      createMessage(id, text, expectsResponse, sentDataType, responseDataType) {
+        const message = new _MessageDefault.default(text, expectsResponse, sentDataType, responseDataType);
+        this.messages[id] = message;
       }
     }
+    exports.default = CSDT;
   }, {
-    "./base": "8wNTG",
-    "@parcel/transformer-js/lib/esmodule-helpers.js": "5gA8y"
+    "./Connection": "3Wl5K",
+    "./ParentConnection": "22VJi",
+    "./Message": "7sBfv",
+    "./constants": "5vBc0",
+    "@parcel/transformer-js/lib/esmodule-helpers.js": "2tbvz"
   }],
-  "8wNTG": [function (require, module, exports) {
+  "3Wl5K": [function (require, module, exports) {
     var _parcelHelpers = require("@parcel/transformer-js/lib/esmodule-helpers.js");
     _parcelHelpers.defineInteropFlag(exports);
     var _yjs = require('yjs');
-    class Base {
-      constructor() {
-        this.version = '0.1.0';
+    var _helpers = require('./helpers');
+    var _constants = require('./constants');
+    class Connection {
+      constructor(url) {
+        this.url = String(url);
+        this.iframe = _helpers.addIframe(this.url);
+        this.hash = Math.random().toString(36).substring(2, 15);
         this.ydoc = new _yjs.Doc();
-        this.hash = '';
+        this.connectionOpened = false;
         // receive ydoc updates
-        document.addEventListener('CSDT-ydoc-update', e => {
-          const update = new Uint8Array(e.detail);
-          _yjs.applyUpdate(this.ydoc, update);
+        _constants.INTERNAL_MESSAGES.update.onResponse(data => {
+          _yjs.applyUpdate(this.ydoc, data);
         });
         // send ydoc updates
-        this.ydoc.on('update', (update, _origin, _doc, _tr) => {
-          this.dispatchEvent('CSDT-ydoc-update', new Uint8Array(update));
+        this.ydoc.on('update', update => {
+          this.sendMessage(_constants.INTERNAL_MESSAGES.update, update);
+        });
+        // initiate the connection once the iframe is loaded
+        this.iframe.addEventListener('load', () => {
+          this.sendMessageWithResponse(_constants.INTERNAL_MESSAGES.open, this.hash).then(() => {
+            this.connectionOpened = true;
+          });
+        }, {
+          once: true
         });
       }
-      dispatchEvent(text, data = null) {
+      sendResponse(message, data) {
+        const text = message.getResponseTextFromChild(this.hash);
         const event = new CustomEvent(text, {
           detail: data
         });
-        if (this.iframe) this.iframe.contentDocument.dispatchEvent(event); else parent.document.dispatchEvent(event);
+        this.iframe.contentDocument.dispatchEvent(event);
+      }
+      sendMessage(message, data) {
+        const text = message.getTextFromParent();
+        const event = new CustomEvent(text, {
+          detail: data
+        });
+        this.iframe.contentDocument.dispatchEvent(event);
+      }
+      sendMessageWithResponse(message, data) {
+        const responseText = message.getResponseTextFromChild(this.hash);
+        const promise = new Promise(resolve => {
+          document.addEventListener(responseText, e => {
+            const d = message.convertResponse(e.detail);
+            resolve(d);
+          }, {
+            once: once
+          });
+          this.sendMessage(message, data);
+        });
+        return promise;
       }
     }
-    exports.default = Base;
+    exports.default = Connection;
   }, {
-    "yjs": "2K3tz",
-    "@parcel/transformer-js/lib/esmodule-helpers.js": "5gA8y"
+    "yjs": "2fXzb",
+    "./helpers": "1K0Ha",
+    "./constants": "5vBc0",
+    "@parcel/transformer-js/lib/esmodule-helpers.js": "2tbvz"
   }],
-  "2K3tz": [function (require, module, exports) {
+  "2fXzb": [function (require, module, exports) {
     "use strict";
     Object.defineProperty(exports, '__esModule', {
       value: true
@@ -2596,6 +2620,8 @@ var define;
     * @function
     */
     const readUpdateV2 = (decoder, ydoc, transactionOrigin, structDecoder = new UpdateDecoderV2(decoder)) => transact(ydoc, transaction => {
+      // force that transaction.local is set to non-local
+      transaction.local = false;
       let retry = false;
       const doc = transaction.doc;
       const store = doc.store;
@@ -4585,33 +4611,40 @@ var define;
     */
     const encodeStateVectorFromUpdateV2 = (update, YEncoder = DSEncoderV2, YDecoder = UpdateDecoderV2) => {
       const encoder = new YEncoder();
-      const updateDecoder = new LazyStructReader(new YDecoder(decoding__namespace.createDecoder(update)), true);
+      const updateDecoder = new LazyStructReader(new YDecoder(decoding__namespace.createDecoder(update)), false);
       let curr = updateDecoder.curr;
       if (curr !== null) {
-        let size = 1;
+        let size = 0;
         let currClient = curr.id.client;
-        let currClock = curr.id.clock;
-        let stopCounting = false;
+        let currClock = 0;
+        let stopCounting = curr.id.clock !== 0;
+        // must start at 0
         for (; curr !== null; curr = updateDecoder.next()) {
-          if (currClient !== curr.id.client) {
-            size++;
-            // We found a new client
-            // write what we have to the encoder
-            encoding__namespace.writeVarUint(encoder.restEncoder, currClient);
-            encoding__namespace.writeVarUint(encoder.restEncoder, currClock);
-            currClient = curr.id.client;
-            stopCounting = false;
-          }
+          // we ignore skips
           if (curr.constructor === Skip) {
             stopCounting = true;
           }
           if (!stopCounting) {
             currClock = curr.id.clock + curr.length;
           }
+          if (currClient !== curr.id.client) {
+            if (currClock !== 0) {
+              size++;
+              // We found a new client
+              // write what we have to the encoder
+              encoding__namespace.writeVarUint(encoder.restEncoder, currClient);
+              encoding__namespace.writeVarUint(encoder.restEncoder, currClock);
+            }
+            currClient = curr.id.client;
+            stopCounting = false;
+          }
         }
         // write what we have
-        encoding__namespace.writeVarUint(encoder.restEncoder, currClient);
-        encoding__namespace.writeVarUint(encoder.restEncoder, currClock);
+        if (currClock !== 0) {
+          size++;
+          encoding__namespace.writeVarUint(encoder.restEncoder, currClient);
+          encoding__namespace.writeVarUint(encoder.restEncoder, currClock);
+        }
         // prepend the size of the state vector
         const enc = encoding__namespace.createEncoder();
         encoding__namespace.writeVarUint(enc, size);
@@ -10275,24 +10308,24 @@ var define;
     exports.typeListToArraySnapshot = typeListToArraySnapshot;
     exports.typeMapGetSnapshot = typeMapGetSnapshot;
   }, {
-    "lib0/dist/observable.cjs": "3y1IK",
-    "lib0/dist/array.cjs": "1XUOM",
-    "lib0/dist/math.cjs": "3MrGE",
-    "lib0/dist/map.cjs": "RAkIO",
-    "lib0/dist/encoding.cjs": "2f4G9",
-    "lib0/dist/decoding.cjs": "1RsLH",
-    "lib0/dist/random.cjs": "1EkwC",
-    "lib0/dist/buffer.cjs": "5Lodz",
-    "lib0/dist/error.cjs": "3pcdJ",
-    "lib0/dist/binary.cjs": "29PVn",
-    "lib0/dist/function.cjs": "3qwmW",
-    "lib0/dist/set.cjs": "2KNVr",
-    "lib0/dist/logging.cjs": "Eof20",
-    "lib0/dist/time.cjs": "1XfeI",
-    "lib0/dist/iterator.cjs": "6F6dS",
-    "lib0/dist/object.cjs": "7LnHk"
+    "lib0/dist/observable.cjs": "2xUJ5",
+    "lib0/dist/array.cjs": "2FOJs",
+    "lib0/dist/math.cjs": "4IXVm",
+    "lib0/dist/map.cjs": "7Dg1u",
+    "lib0/dist/encoding.cjs": "1ZiVL",
+    "lib0/dist/decoding.cjs": "2gZMm",
+    "lib0/dist/random.cjs": "12xy1",
+    "lib0/dist/buffer.cjs": "1L7su",
+    "lib0/dist/error.cjs": "4UUrG",
+    "lib0/dist/binary.cjs": "1ffSb",
+    "lib0/dist/function.cjs": "9I6YH",
+    "lib0/dist/set.cjs": "1hAh3",
+    "lib0/dist/logging.cjs": "5KTPI",
+    "lib0/dist/time.cjs": "68Yql",
+    "lib0/dist/iterator.cjs": "2osaj",
+    "lib0/dist/object.cjs": "5IljW"
   }],
-  "3y1IK": [function (require, module, exports) {
+  "2xUJ5": [function (require, module, exports) {
     "use strict";
     Object.defineProperty(exports, '__esModule', {
       value: true
@@ -10371,11 +10404,11 @@ var define;
     }
     exports.Observable = Observable;
   }, {
-    "./map-28a001c9.cjs": "3eOOI",
-    "./set-7ae96d21.cjs": "6dXAE",
-    "./array-b2d24238.cjs": "5gku8"
+    "./map-28a001c9.cjs": "2GDvG",
+    "./set-7ae96d21.cjs": "1Hm0Z",
+    "./array-b2d24238.cjs": "2bdtd"
   }],
-  "3eOOI": [function (require, module, exports) {
+  "2GDvG": [function (require, module, exports) {
     "use strict";
     /**
     * Utility module to work with key-value stores.
@@ -10501,7 +10534,7 @@ var define;
     exports.map$1 = map$1;
     exports.setIfUndefined = setIfUndefined;
   }, {}],
-  "6dXAE": [function (require, module, exports) {
+  "1Hm0Z": [function (require, module, exports) {
     "use strict";
     /**
     * Utility module to work with sets.
@@ -10524,7 +10557,7 @@ var define;
     exports.set = set;
     exports.toArray = toArray;
   }, {}],
-  "5gku8": [function (require, module, exports) {
+  "2bdtd": [function (require, module, exports) {
     "use strict";
     /**
     * Utility module to work with Arrays.
@@ -10631,7 +10664,7 @@ var define;
     exports.last = last;
     exports.some = some;
   }, {}],
-  "1XUOM": [function (require, module, exports) {
+  "2FOJs": [function (require, module, exports) {
     "use strict";
     Object.defineProperty(exports, '__esModule', {
       value: true
@@ -10647,9 +10680,9 @@ var define;
     exports.last = array.last;
     exports.some = array.some;
   }, {
-    "./array-b2d24238.cjs": "5gku8"
+    "./array-b2d24238.cjs": "2bdtd"
   }],
-  "3MrGE": [function (require, module, exports) {
+  "4IXVm": [function (require, module, exports) {
     "use strict";
     Object.defineProperty(exports, '__esModule', {
       value: true
@@ -10673,9 +10706,9 @@ var define;
     exports.sign = math.sign;
     exports.sqrt = math.sqrt;
   }, {
-    "./math-08e068f9.cjs": "2J4Qg"
+    "./math-08e068f9.cjs": "3Farx"
   }],
-  "2J4Qg": [function (require, module, exports) {
+  "3Farx": [function (require, module, exports) {
     "use strict";
     /**
     * Common Math expressions.
@@ -10766,7 +10799,7 @@ var define;
     exports.sign = sign;
     exports.sqrt = sqrt;
   }, {}],
-  "RAkIO": [function (require, module, exports) {
+  "7Dg1u": [function (require, module, exports) {
     "use strict";
     Object.defineProperty(exports, '__esModule', {
       value: true
@@ -10779,9 +10812,9 @@ var define;
     exports.map = map.map;
     exports.setIfUndefined = map.setIfUndefined;
   }, {
-    "./map-28a001c9.cjs": "3eOOI"
+    "./map-28a001c9.cjs": "2GDvG"
   }],
-  "2f4G9": [function (require, module, exports) {
+  "1ZiVL": [function (require, module, exports) {
     "use strict";
     Object.defineProperty(exports, '__esModule', {
       value: true
@@ -10828,17 +10861,17 @@ var define;
     exports.writeVarUint = encoding.writeVarUint;
     exports.writeVarUint8Array = encoding.writeVarUint8Array;
   }, {
-    "./buffer-ac2cdedf.cjs": "5HCTh",
-    "./math-08e068f9.cjs": "2J4Qg",
-    "./number-24f1eabe.cjs": "OlAwz",
-    "./binary-ac8e39e2.cjs": "4Rtr2",
-    "./string-f3c3d805.cjs": "43eAZ",
-    "./environment-7e2ffaea.cjs": "7hQhK",
-    "./map-28a001c9.cjs": "3eOOI",
-    "./conditions-fb475c70.cjs": "1Kr8E",
-    "./storage.cjs": "3sall"
+    "./buffer-ac2cdedf.cjs": "6VMiW",
+    "./math-08e068f9.cjs": "3Farx",
+    "./number-24f1eabe.cjs": "1RrYP",
+    "./binary-ac8e39e2.cjs": "bTAV5",
+    "./string-f3c3d805.cjs": "7iFR9",
+    "./environment-7e2ffaea.cjs": "709bw",
+    "./map-28a001c9.cjs": "2GDvG",
+    "./conditions-fb475c70.cjs": "6Gbix",
+    "./storage.cjs": "1wzWf"
   }],
-  "5HCTh": [function (require, module, exports) {
+  "6VMiW": [function (require, module, exports) {
     "use strict";
     var Buffer = require("buffer").Buffer;
     var string = require('./string-f3c3d805.cjs');
@@ -12475,14 +12508,14 @@ var define;
     exports.writeVarUint = writeVarUint;
     exports.writeVarUint8Array = writeVarUint8Array;
   }, {
-    "buffer": "3susO",
-    "./string-f3c3d805.cjs": "43eAZ",
-    "./environment-7e2ffaea.cjs": "7hQhK",
-    "./binary-ac8e39e2.cjs": "4Rtr2",
-    "./math-08e068f9.cjs": "2J4Qg",
-    "./number-24f1eabe.cjs": "OlAwz"
+    "buffer": "7jWjX",
+    "./string-f3c3d805.cjs": "7iFR9",
+    "./environment-7e2ffaea.cjs": "709bw",
+    "./binary-ac8e39e2.cjs": "bTAV5",
+    "./math-08e068f9.cjs": "3Farx",
+    "./number-24f1eabe.cjs": "1RrYP"
   }],
-  "3susO": [function (require, module, exports) {
+  "7jWjX": [function (require, module, exports) {
     /*!
     * The buffer module from node.js, for the browser.
     *
@@ -13953,10 +13986,10 @@ var define;
       return table;
     })();
   }, {
-    "base64-js": "6UXZh",
-    "ieee754": "6YlQP"
+    "base64-js": "zi0ku",
+    "ieee754": "5pVPF"
   }],
-  "6UXZh": [function (require, module, exports) {
+  "zi0ku": [function (require, module, exports) {
     "use strict";
     exports.byteLength = byteLength;
     exports.toByteArray = toByteArray;
@@ -14057,7 +14090,7 @@ var define;
       return parts.join('');
     }
   }, {}],
-  "6YlQP": [function (require, module, exports) {
+  "5pVPF": [function (require, module, exports) {
     /*! ieee754. BSD-3-Clause License. Feross Aboukhadijeh <https://feross.org/opensource>*/
     exports.read = function (buffer, offset, isLE, mLen, nBytes) {
       var e, m;
@@ -14133,7 +14166,7 @@ var define;
       buffer[offset + i - d] |= s * 128;
     };
   }, {}],
-  "43eAZ": [function (require, module, exports) {
+  "7iFR9": [function (require, module, exports) {
     "use strict";
     /**
     * Utility module to work with strings.
@@ -14272,7 +14305,7 @@ var define;
     exports.utf8ByteLength = utf8ByteLength;
     exports.utf8TextEncoder = utf8TextEncoder;
   }, {}],
-  "7hQhK": [function (require, module, exports) {
+  "709bw": [function (require, module, exports) {
     "use strict";
     var process = require("process");
     var map = require('./map-28a001c9.cjs');
@@ -14391,13 +14424,13 @@ var define;
     exports.isNode = isNode;
     exports.production = production;
   }, {
-    "process": "7AgFc",
-    "./map-28a001c9.cjs": "3eOOI",
-    "./string-f3c3d805.cjs": "43eAZ",
-    "./conditions-fb475c70.cjs": "1Kr8E",
-    "./storage.cjs": "3sall"
+    "process": "msuZS",
+    "./map-28a001c9.cjs": "2GDvG",
+    "./string-f3c3d805.cjs": "7iFR9",
+    "./conditions-fb475c70.cjs": "6Gbix",
+    "./storage.cjs": "1wzWf"
   }],
-  "7AgFc": [function (require, module, exports) {
+  "msuZS": [function (require, module, exports) {
     // shim for using process in browser
     var process = module.exports = {};
     // cached from whatever global is present so that test runners that stub it
@@ -14572,7 +14605,7 @@ var define;
       return 0;
     };
   }, {}],
-  "1Kr8E": [function (require, module, exports) {
+  "6Gbix": [function (require, module, exports) {
     "use strict";
     /**
     * Often used conditions.
@@ -14593,7 +14626,7 @@ var define;
     exports.conditions = conditions;
     exports.undefinedToNull = undefinedToNull;
   }, {}],
-  "3sall": [function (require, module, exports) {
+  "1wzWf": [function (require, module, exports) {
     "use strict";
     Object.defineProperty(exports, '__esModule', {
       value: true
@@ -14656,7 +14689,7 @@ var define;
     exports.onChange = onChange;
     exports.varStorage = varStorage;
   }, {}],
-  "4Rtr2": [function (require, module, exports) {
+  "bTAV5": [function (require, module, exports) {
     "use strict";
     /*eslint-env browser*/
     /**
@@ -14880,7 +14913,7 @@ var define;
     exports.BITS9 = BITS9;
     exports.binary = binary;
   }, {}],
-  "OlAwz": [function (require, module, exports) {
+  "1RrYP": [function (require, module, exports) {
     "use strict";
     var math = require('./math-08e068f9.cjs');
     var binary = require('./binary-ac8e39e2.cjs');
@@ -14919,10 +14952,10 @@ var define;
     exports.isNaN = isNaN;
     exports.number = number;
   }, {
-    "./math-08e068f9.cjs": "2J4Qg",
-    "./binary-ac8e39e2.cjs": "4Rtr2"
+    "./math-08e068f9.cjs": "3Farx",
+    "./binary-ac8e39e2.cjs": "bTAV5"
   }],
-  "1RsLH": [function (require, module, exports) {
+  "2gZMm": [function (require, module, exports) {
     "use strict";
     Object.defineProperty(exports, '__esModule', {
       value: true
@@ -14971,17 +15004,17 @@ var define;
     exports.readVarUint8Array = encoding.readVarUint8Array;
     exports.skip8 = encoding.skip8;
   }, {
-    "./buffer-ac2cdedf.cjs": "5HCTh",
-    "./binary-ac8e39e2.cjs": "4Rtr2",
-    "./math-08e068f9.cjs": "2J4Qg",
-    "./string-f3c3d805.cjs": "43eAZ",
-    "./environment-7e2ffaea.cjs": "7hQhK",
-    "./map-28a001c9.cjs": "3eOOI",
-    "./conditions-fb475c70.cjs": "1Kr8E",
-    "./storage.cjs": "3sall",
-    "./number-24f1eabe.cjs": "OlAwz"
+    "./buffer-ac2cdedf.cjs": "6VMiW",
+    "./binary-ac8e39e2.cjs": "bTAV5",
+    "./math-08e068f9.cjs": "3Farx",
+    "./string-f3c3d805.cjs": "7iFR9",
+    "./environment-7e2ffaea.cjs": "709bw",
+    "./map-28a001c9.cjs": "2GDvG",
+    "./conditions-fb475c70.cjs": "6Gbix",
+    "./storage.cjs": "1wzWf",
+    "./number-24f1eabe.cjs": "1RrYP"
   }],
-  "1EkwC": [function (require, module, exports) {
+  "12xy1": [function (require, module, exports) {
     "use strict";
     Object.defineProperty(exports, '__esModule', {
       value: true
@@ -15006,10 +15039,10 @@ var define;
     exports.uint32 = uint32;
     exports.uuidv4 = uuidv4;
   }, {
-    "./math-08e068f9.cjs": "2J4Qg",
-    "isomorphic.js": "1Nvbr"
+    "./math-08e068f9.cjs": "3Farx",
+    "isomorphic.js": "1vEZw"
   }],
-  "1Nvbr": [function (require, module, exports) {
+  "1vEZw": [function (require, module, exports) {
     var _parcelHelpers = require("@parcel/transformer-js/lib/esmodule-helpers.js");
     _parcelHelpers.defineInteropFlag(exports);
     _parcelHelpers.export(exports, "performance", function () {
@@ -15036,9 +15069,9 @@ var define;
       return buf;
     };
   }, {
-    "@parcel/transformer-js/lib/esmodule-helpers.js": "5gA8y"
+    "@parcel/transformer-js/lib/esmodule-helpers.js": "2tbvz"
   }],
-  "5gA8y": [function (require, module, exports) {
+  "2tbvz": [function (require, module, exports) {
     "use strict";
     exports.interopDefault = function (a) {
       return a && a.__esModule ? a : {
@@ -15075,7 +15108,7 @@ var define;
       });
     };
   }, {}],
-  "5Lodz": [function (require, module, exports) {
+  "1L7su": [function (require, module, exports) {
     "use strict";
     Object.defineProperty(exports, '__esModule', {
       value: true
@@ -15098,17 +15131,17 @@ var define;
     exports.fromBase64 = encoding.fromBase64;
     exports.toBase64 = encoding.toBase64;
   }, {
-    "./string-f3c3d805.cjs": "43eAZ",
-    "./environment-7e2ffaea.cjs": "7hQhK",
-    "./buffer-ac2cdedf.cjs": "5HCTh",
-    "./map-28a001c9.cjs": "3eOOI",
-    "./conditions-fb475c70.cjs": "1Kr8E",
-    "./storage.cjs": "3sall",
-    "./binary-ac8e39e2.cjs": "4Rtr2",
-    "./math-08e068f9.cjs": "2J4Qg",
-    "./number-24f1eabe.cjs": "OlAwz"
+    "./string-f3c3d805.cjs": "7iFR9",
+    "./environment-7e2ffaea.cjs": "709bw",
+    "./buffer-ac2cdedf.cjs": "6VMiW",
+    "./map-28a001c9.cjs": "2GDvG",
+    "./conditions-fb475c70.cjs": "6Gbix",
+    "./storage.cjs": "1wzWf",
+    "./binary-ac8e39e2.cjs": "bTAV5",
+    "./math-08e068f9.cjs": "3Farx",
+    "./number-24f1eabe.cjs": "1RrYP"
   }],
-  "3pcdJ": [function (require, module, exports) {
+  "4UUrG": [function (require, module, exports) {
     "use strict";
     Object.defineProperty(exports, '__esModule', {
       value: true
@@ -15118,9 +15151,9 @@ var define;
     exports.methodUnimplemented = error.methodUnimplemented;
     exports.unexpectedCase = error.unexpectedCase;
   }, {
-    "./error-55a9a8c8.cjs": "vmIGb"
+    "./error-55a9a8c8.cjs": "793lQ"
   }],
-  "vmIGb": [function (require, module, exports) {
+  "793lQ": [function (require, module, exports) {
     "use strict";
     /**
     * Error helpers.
@@ -15160,7 +15193,7 @@ var define;
     exports.methodUnimplemented = methodUnimplemented;
     exports.unexpectedCase = unexpectedCase;
   }, {}],
-  "29PVn": [function (require, module, exports) {
+  "1ffSb": [function (require, module, exports) {
     "use strict";
     Object.defineProperty(exports, '__esModule', {
       value: true
@@ -15232,9 +15265,9 @@ var define;
     exports.BITS8 = binary.BITS8;
     exports.BITS9 = binary.BITS9;
   }, {
-    "./binary-ac8e39e2.cjs": "4Rtr2"
+    "./binary-ac8e39e2.cjs": "bTAV5"
   }],
-  "3qwmW": [function (require, module, exports) {
+  "9I6YH": [function (require, module, exports) {
     "use strict";
     Object.defineProperty(exports, '__esModule', {
       value: true
@@ -15250,11 +15283,11 @@ var define;
     exports.id = _function.id;
     exports.nop = _function.nop;
   }, {
-    "./array-b2d24238.cjs": "5gku8",
-    "./object-dcdd6eed.cjs": "4PPDU",
-    "./function-f8acb5f5.cjs": "1xK6d"
+    "./array-b2d24238.cjs": "2bdtd",
+    "./object-dcdd6eed.cjs": "6UfWj",
+    "./function-f8acb5f5.cjs": "2yVOU"
   }],
-  "4PPDU": [function (require, module, exports) {
+  "6UfWj": [function (require, module, exports) {
     "use strict";
     /**
     * Utility functions for working with EcmaScript objects.
@@ -15365,7 +15398,7 @@ var define;
     exports.object = object;
     exports.some = some;
   }, {}],
-  "1xK6d": [function (require, module, exports) {
+  "2yVOU": [function (require, module, exports) {
     "use strict";
     var array = require('./array-b2d24238.cjs');
     var object = require('./object-dcdd6eed.cjs');
@@ -15521,10 +15554,10 @@ var define;
     exports.id = id;
     exports.nop = nop;
   }, {
-    "./array-b2d24238.cjs": "5gku8",
-    "./object-dcdd6eed.cjs": "4PPDU"
+    "./array-b2d24238.cjs": "2bdtd",
+    "./object-dcdd6eed.cjs": "6UfWj"
   }],
-  "2KNVr": [function (require, module, exports) {
+  "1hAh3": [function (require, module, exports) {
     "use strict";
     Object.defineProperty(exports, '__esModule', {
       value: true
@@ -15533,9 +15566,9 @@ var define;
     exports.create = set.create;
     exports.toArray = set.toArray;
   }, {
-    "./set-7ae96d21.cjs": "6dXAE"
+    "./set-7ae96d21.cjs": "1Hm0Z"
   }],
-  "Eof20": [function (require, module, exports) {
+  "5KTPI": [function (require, module, exports) {
     "use strict";
     Object.defineProperty(exports, '__esModule', {
       value: true
@@ -15581,25 +15614,25 @@ var define;
     exports.vconsoles = logging.vconsoles;
     exports.warn = logging.warn;
   }, {
-    "./environment-7e2ffaea.cjs": "7hQhK",
-    "./symbol-c5caa724.cjs": "1XR4P",
-    "./pair-ab022bc3.cjs": "3SnGW",
-    "./dom-58958c04.cjs": "25KoB",
-    "./json-092190a1.cjs": "7GMKl",
-    "./map-28a001c9.cjs": "3eOOI",
-    "./eventloop-c60b5658.cjs": "4c5Mr",
-    "./math-08e068f9.cjs": "2J4Qg",
-    "./time-e00067da.cjs": "71wB0",
-    "./function-f8acb5f5.cjs": "1xK6d",
-    "./logging-7cc36806.cjs": "3tZX5",
-    "./string-f3c3d805.cjs": "43eAZ",
-    "./conditions-fb475c70.cjs": "1Kr8E",
-    "./storage.cjs": "3sall",
-    "./metric.cjs": "6jxBw",
-    "./array-b2d24238.cjs": "5gku8",
-    "./object-dcdd6eed.cjs": "4PPDU"
+    "./environment-7e2ffaea.cjs": "709bw",
+    "./symbol-c5caa724.cjs": "6wCBz",
+    "./pair-ab022bc3.cjs": "7t2e6",
+    "./dom-58958c04.cjs": "5ZVxg",
+    "./json-092190a1.cjs": "OW6G0",
+    "./map-28a001c9.cjs": "2GDvG",
+    "./eventloop-c60b5658.cjs": "Vcd1s",
+    "./math-08e068f9.cjs": "3Farx",
+    "./time-e00067da.cjs": "6UlYK",
+    "./function-f8acb5f5.cjs": "2yVOU",
+    "./logging-7cc36806.cjs": "3F6q6",
+    "./string-f3c3d805.cjs": "7iFR9",
+    "./conditions-fb475c70.cjs": "6Gbix",
+    "./storage.cjs": "1wzWf",
+    "./metric.cjs": "5WTtv",
+    "./array-b2d24238.cjs": "2bdtd",
+    "./object-dcdd6eed.cjs": "6UfWj"
   }],
-  "1XR4P": [function (require, module, exports) {
+  "6wCBz": [function (require, module, exports) {
     "use strict";
     /**
     * Utility module to work with EcmaScript Symbols.
@@ -15626,7 +15659,7 @@ var define;
     exports.isSymbol = isSymbol;
     exports.symbol = symbol;
   }, {}],
-  "3SnGW": [function (require, module, exports) {
+  "7t2e6": [function (require, module, exports) {
     "use strict";
     /**
     * Working with value pairs.
@@ -15688,7 +15721,7 @@ var define;
     exports.map = map;
     exports.pair = pair;
   }, {}],
-  "25KoB": [function (require, module, exports) {
+  "5ZVxg": [function (require, module, exports) {
     "use strict";
     var pair = require('./pair-ab022bc3.cjs');
     var map = require('./map-28a001c9.cjs');
@@ -16029,10 +16062,10 @@ var define;
     exports.setAttributesMap = setAttributesMap;
     exports.text = text;
   }, {
-    "./pair-ab022bc3.cjs": "3SnGW",
-    "./map-28a001c9.cjs": "3eOOI"
+    "./pair-ab022bc3.cjs": "7t2e6",
+    "./map-28a001c9.cjs": "2GDvG"
   }],
-  "7GMKl": [function (require, module, exports) {
+  "OW6G0": [function (require, module, exports) {
     "use strict";
     /**
     * JSON utility functions.
@@ -16062,7 +16095,7 @@ var define;
     exports.parse = parse;
     exports.stringify = stringify;
   }, {}],
-  "4c5Mr": [function (require, module, exports) {
+  "Vcd1s": [function (require, module, exports) {
     "use strict";
     /*global requestIdleCallback, requestAnimationFrame, cancelIdleCallback, cancelAnimationFrame*/
     /**
@@ -16174,7 +16207,7 @@ var define;
     exports.interval = interval;
     exports.timeout = timeout;
   }, {}],
-  "71wB0": [function (require, module, exports) {
+  "6UlYK": [function (require, module, exports) {
     "use strict";
     var metric = require('./metric.cjs');
     var math = require('./math-08e068f9.cjs');
@@ -16231,10 +16264,10 @@ var define;
     exports.humanizeDuration = humanizeDuration;
     exports.time = time;
   }, {
-    "./metric.cjs": "6jxBw",
-    "./math-08e068f9.cjs": "2J4Qg"
+    "./metric.cjs": "5WTtv",
+    "./math-08e068f9.cjs": "3Farx"
   }],
-  "6jxBw": [function (require, module, exports) {
+  "5WTtv": [function (require, module, exports) {
     "use strict";
     Object.defineProperty(exports, '__esModule', {
       value: true
@@ -16313,9 +16346,9 @@ var define;
     exports.zepto = zepto;
     exports.zetta = zetta;
   }, {
-    "./math-08e068f9.cjs": "2J4Qg"
+    "./math-08e068f9.cjs": "3Farx"
   }],
-  "3tZX5": [function (require, module, exports) {
+  "3F6q6": [function (require, module, exports) {
     "use strict";
     var environment = require('./environment-7e2ffaea.cjs');
     var symbol = require('./symbol-c5caa724.cjs');
@@ -16738,18 +16771,18 @@ var define;
     exports.vconsoles = vconsoles;
     exports.warn = warn;
   }, {
-    "./environment-7e2ffaea.cjs": "7hQhK",
-    "./symbol-c5caa724.cjs": "1XR4P",
-    "./pair-ab022bc3.cjs": "3SnGW",
-    "./dom-58958c04.cjs": "25KoB",
-    "./json-092190a1.cjs": "7GMKl",
-    "./map-28a001c9.cjs": "3eOOI",
-    "./eventloop-c60b5658.cjs": "4c5Mr",
-    "./math-08e068f9.cjs": "2J4Qg",
-    "./time-e00067da.cjs": "71wB0",
-    "./function-f8acb5f5.cjs": "1xK6d"
+    "./environment-7e2ffaea.cjs": "709bw",
+    "./symbol-c5caa724.cjs": "6wCBz",
+    "./pair-ab022bc3.cjs": "7t2e6",
+    "./dom-58958c04.cjs": "5ZVxg",
+    "./json-092190a1.cjs": "OW6G0",
+    "./map-28a001c9.cjs": "2GDvG",
+    "./eventloop-c60b5658.cjs": "Vcd1s",
+    "./math-08e068f9.cjs": "3Farx",
+    "./time-e00067da.cjs": "6UlYK",
+    "./function-f8acb5f5.cjs": "2yVOU"
   }],
-  "1XfeI": [function (require, module, exports) {
+  "68Yql": [function (require, module, exports) {
     "use strict";
     Object.defineProperty(exports, '__esModule', {
       value: true
@@ -16761,11 +16794,11 @@ var define;
     exports.getUnixTime = time.getUnixTime;
     exports.humanizeDuration = time.humanizeDuration;
   }, {
-    "./metric.cjs": "6jxBw",
-    "./math-08e068f9.cjs": "2J4Qg",
-    "./time-e00067da.cjs": "71wB0"
+    "./metric.cjs": "5WTtv",
+    "./math-08e068f9.cjs": "3Farx",
+    "./time-e00067da.cjs": "6UlYK"
   }],
-  "6F6dS": [function (require, module, exports) {
+  "2osaj": [function (require, module, exports) {
     "use strict";
     Object.defineProperty(exports, '__esModule', {
       value: true
@@ -16776,9 +16809,9 @@ var define;
     exports.iteratorMap = iterator.iteratorMap;
     exports.mapIterator = iterator.mapIterator;
   }, {
-    "./iterator-fe01d209.cjs": "3Eq8y"
+    "./iterator-fe01d209.cjs": "2JyV5"
   }],
-  "3Eq8y": [function (require, module, exports) {
+  "2JyV5": [function (require, module, exports) {
     "use strict";
     /**
     * Utility module to create and manipulate Iterators.
@@ -16866,7 +16899,7 @@ var define;
     exports.iteratorMap = iteratorMap;
     exports.mapIterator = mapIterator;
   }, {}],
-  "7LnHk": [function (require, module, exports) {
+  "5IljW": [function (require, module, exports) {
     "use strict";
     Object.defineProperty(exports, '__esModule', {
       value: true
@@ -16883,91 +16916,176 @@ var define;
     exports.map = object.map;
     exports.some = object.some;
   }, {
-    "./object-dcdd6eed.cjs": "4PPDU"
+    "./object-dcdd6eed.cjs": "6UfWj"
   }],
-  "6nDp4": [function (require, module, exports) {
+  "1K0Ha": [function (require, module, exports) {
     var _parcelHelpers = require("@parcel/transformer-js/lib/esmodule-helpers.js");
     _parcelHelpers.defineInteropFlag(exports);
-    _parcelHelpers.export(exports, "CSDTChild", function () {
-      return CSDTChild;
+    _parcelHelpers.export(exports, "addIframe", function () {
+      return addIframe;
     });
-    var _base = require('./base');
-    var _baseDefault = _parcelHelpers.interopDefault(_base);
-    class CSDTChild extends _baseDefault.default {
-      constructor() {
-        super();
-        document.addEventListener('CSDT-connection-open', e => {
-          this.hash = String(e.detail.hash);
-        });
+    _parcelHelpers.export(exports, "convertType", function () {
+      return convertType;
+    });
+    function addIframe(url) {
+      const iframe = document.createElement('iframe');
+      iframe.src = url;
+      iframe.style.display = 'none';
+      iframe.style.position = 'absolute';
+      iframe.style.width = '0';
+      iframe.style.height = '0';
+      iframe.style.border = '0';
+      document.body.appendChild(iframe);
+      return iframe;
+    }
+    function convertType(data, type) {
+      switch (type) {
+        case 'boolean':
+          return Boolean(data);
+        case 'string':
+          return String(data);
+        case 'number':
+          return Number(data);
+        case 'uint8array':
+          return new Uint8Array(data);
       }
-      responseConnectionOpen(connectionEstablished = false) {
-        this.dispatchEvent('CSDT-response-connection-open', Boolean(connectionEstablished));
-      }
+      return null;
     }
   }, {
-    "./base": "8wNTG",
-    "@parcel/transformer-js/lib/esmodule-helpers.js": "5gA8y"
-  }]
-}, ["gKhix", "556pz"], "556pz", "parcelRequirecf62");
-
-},{}],"3EQWo":[function(require,module,exports) {
-var _parcelHelpers = require("@parcel/transformer-js/lib/esmodule-helpers.js");
-_parcelHelpers.defineInteropFlag(exports);
-_parcelHelpers.export(exports, "deepSearchForTypes", function () {
-  return deepSearchForTypes;
-});
-_parcelHelpers.export(exports, "deepRemoveTypes", function () {
-  return deepRemoveTypes;
-});
-_parcelHelpers.export(exports, "deepRemoveIds", function () {
-  return deepRemoveIds;
-});
-function deepSearchForTypes(obj, types) {
-  const found = [];
-  if (types.includes(obj.type)) found.push(obj);
-  if (obj.children.length > 0) {
-    obj.children.forEach(child => found.push(...deepSearchForTypes(child, types)));
-  }
-  return found;
-}
-function deepRemoveTypes(obj, types, includeObj = false) {
-  const removed = [];
-  if (includeObj == true) {
-    if (types.includes(obj.type)) {
-      removed.push(obj);
-      return [undefined, removed];
-    }
-  }
-  if (obj.children.length > 0) {
-    obj.children.forEach(child => {
-      const [cObj, cRemoved] = deepRemoveTypes(child, types, true);
-      removed.push(...cRemoved);
-      if (!cObj) obj.remove(child);
+    "@parcel/transformer-js/lib/esmodule-helpers.js": "2tbvz"
+  }],
+  "5vBc0": [function (require, module, exports) {
+    var _parcelHelpers = require("@parcel/transformer-js/lib/esmodule-helpers.js");
+    _parcelHelpers.defineInteropFlag(exports);
+    _parcelHelpers.export(exports, "INTERNAL_MESSAGES", function () {
+      return INTERNAL_MESSAGES;
     });
-  }
-  return [obj, removed];
-}
-function deepRemoveIds(obj, ids, includeObj = false) {
-  const removed = [];
-  if (includeObj == true) {
-    if (obj.el) {
-      if (ids.includes(obj.el.id)) {
-        removed.push(obj);
-        return [undefined, removed];
+    var _Message = require('./Message');
+    var _MessageDefault = _parcelHelpers.interopDefault(_Message);
+    const INTERNAL_MESSAGES = {
+      open: new _MessageDefault.default('open-connection', false, 'string', null),
+      update: new _MessageDefault.default('ydoc-update', false, 'uint8array', null)
+    };
+  }, {
+    "./Message": "7sBfv",
+    "@parcel/transformer-js/lib/esmodule-helpers.js": "2tbvz"
+  }],
+  "7sBfv": [function (require, module, exports) {
+    var _parcelHelpers = require("@parcel/transformer-js/lib/esmodule-helpers.js");
+    _parcelHelpers.defineInteropFlag(exports);
+    var _helpers = require('./helpers');
+    class Message {
+      constructor(text, expectsResponse, sentDataType, responseDataType) {
+        this.text = String(text);
+        this.expectsResponse = Boolean(expectsResponse);
+        this.responseText = this.expectsResponse === true ? `${this.text}-response` : null;
+        this.sentDataType = String(sentDataType);
+        this.responseDataType = String(responseDataType);
+      }
+      /*get text*/
+      getText(prefix) {
+        return `${prefix}-${this.text}`;
+      }
+      getTextFromParent() {
+        return this.getText('CSDT');
+      }
+      getTextFromChild(prefix) {
+        return this.getText(prefix);
+      }
+      /*get response text*/
+      getResponseText(prefix) {
+        return `${prefix}-${this.responseText}`;
+      }
+      getResponseTextFromParent() {
+        return this.getResponseText('CSDT');
+      }
+      getResponseTextFromChild(prefix) {
+        return this.getResponseText(prefix);
+      }
+      /*convert*/
+      convertSent(data) {
+        return _helpers.convertType(data, this.sentDataType);
+      }
+      convertResponse(data) {
+        return _helpers.convertType(data, this.responseDataType);
       }
     }
-  }
-  if (obj.children.length > 0) {
-    obj.children.forEach(child => {
-      const [cObj, cRemoved] = deepRemoveIds(child, ids, true);
-      removed.push(...cRemoved);
-      if (!cObj) obj.remove(child);
-    });
-  }
-  return [obj, removed];
-}
+    exports.default = Message;
+  }, {
+    "./helpers": "1K0Ha",
+    "@parcel/transformer-js/lib/esmodule-helpers.js": "2tbvz"
+  }],
+  "22VJi": [function (require, module, exports) {
+    var _parcelHelpers = require("@parcel/transformer-js/lib/esmodule-helpers.js");
+    _parcelHelpers.defineInteropFlag(exports);
+    var _yjs = require('yjs');
+    var _constants = require('./constants');
+    class ParentConnection {
+      constructor() {
+        this.hash = '';
+        this.ydoc = new _yjs.Doc();
+        this.connectionOpened = false;
+        // receive ydoc updates
+        _constants.INTERNAL_MESSAGES.update.onResponse(data => {
+          _yjs.applyUpdate(this.ydoc, data);
+        });
+        // send ydoc updates
+        this.ydoc.on('update', update => {
+          this.sendMessage(_constants.INTERNAL_MESSAGES.update, update);
+        });
+        // wait for parent to initialize connection
+        const open = _constants.INTERNAL_MESSAGES.open;
+        document.addEventListener(open.getTextFromParent(), data => {
+          this.hash = open.convertSent(data);
+          this.sendResponse(open);
+        });
+      }
+      sendResponse(message, data) {
+        const text = message.getResponseTextFromChild(this.hash);
+        const event = new CustomEvent(text, {
+          detail: data
+        });
+        parent.document.dispatchEvent(event);
+      }
+      sendMessage(message, data) {
+        const text = message.getTextFromChild(this.hash);
+        const event = new CustomEvent(text, {
+          detail: data
+        });
+        parent.document.dispatchEvent(event);
+      }
+      sendMessageWithResponse(message, data) {
+        const responseText = message.getResponseTextFromChild(this.hash);
+        const promise = new Promise(resolve => {
+          document.addEventListener(responseText, e => {
+            const d = message.convertResponse(e.detail);
+            resolve(d);
+          }, {
+            once: true
+          });
+          this.sendMessage(message, data);
+        });
+        return promise;
+      }
+    }
+    exports.default = ParentConnection;
+  }, {
+    "yjs": "2fXzb",
+    "./constants": "5vBc0",
+    "@parcel/transformer-js/lib/esmodule-helpers.js": "2tbvz"
+  }]
+}, ["5p6Wz", "2pld4"], "2pld4", "parcelRequirecf62");
 
-},{"@parcel/transformer-js/lib/esmodule-helpers.js":"5gA8y"}],"5gA8y":[function(require,module,exports) {
+},{}],"5vBc0":[function(require,module,exports) {
+var _parcelHelpers = require("@parcel/transformer-js/lib/esmodule-helpers.js");
+_parcelHelpers.defineInteropFlag(exports);
+_parcelHelpers.export(exports, "customMessages", function () {
+  return customMessages;
+});
+require('../CSDT/dist/csdt');
+const customMessages = [['pixel', 'container-pixel-data', false, 'uint8array', null], ['preview', 'container-preview', true, null, 'uint8array'], ['render', 'container-render', false, null, null]];
+
+},{"../CSDT/dist/csdt":"b1pkp","@parcel/transformer-js/lib/esmodule-helpers.js":"5gA8y"}],"5gA8y":[function(require,module,exports) {
 "use strict";
 
 exports.interopDefault = function (a) {
@@ -17010,7 +17128,7 @@ exports.export = function (dest, destName, get) {
   });
 };
 },{}],"6BgQA":[function(require,module,exports) {
-var _libCsdtExport = require('./lib/csdt/export');
+require('../CSDT/dist/csdt');
 AFRAME.registerComponent('csdt-container-receiver', {
   schema: {
     player: {
@@ -17021,12 +17139,16 @@ AFRAME.registerComponent('csdt-container-receiver', {
     const el = this.el;
     const data = this.data;
     const renderer = el.sceneEl.renderer;
+    // initialize CSDT if needed
+    if (!window.CSDT) window.CSDT = new CSDT();
+    const CSDT = window.CSDT;
+    const conn = CSDT.connections.parent;
+    customMessages.forEach(msg => CSDT.createMessage(...msg));
     el.connection_opened = false;
-    const CSDT = el.CSDT = new _libCsdtExport.CSDTChild();
     el.camPos = new THREE.Vector3();
     el.camQuat = new THREE.Quaternion();
     if (document.querySelector(data.player)) el.player = document.querySelector(data.player).object3D; else el.player = el.sceneEl.camera.el.object3D;
-    document.addEventListener('CSDT-connection-open', () => {
+    document.addEventListener(CSDT.messages.open.getTextFromParent(), () => {
       el.connection_opened = true;
       CSDT.responseConnectionOpen(true);
       // disable aframe's render loop
@@ -17057,7 +17179,7 @@ AFRAME.registerComponent('csdt-container-receiver', {
         });
       });
       // when the parent site tells us to render
-      document.addEventListener('CSDT-render', () => {
+      document.addEventListener(CSDT.messages.render.getTextFromParent(), () => {
         const el = this.el;
         const sceneEl = el.sceneEl;
         const renderer = sceneEl.renderer;
@@ -17072,12 +17194,12 @@ AFRAME.registerComponent('csdt-container-receiver', {
         renderer.readRenderTargetPixels(el.renderTarget, 0, 0, el.canvasWidth, el.canvasHeight, el.pixels);
         // send pixel data to parent
         // use an event rather than yjs to transfer data for performance reasons, el.pixels is very large
-        CSDT.dispatchEvent(`${CSDT.hash}-pixel-data`, el.pixels);
+        conn.sendMessage(CSDT.messages.pixel, el.pixels);
       });
       // when the parent requests a preview
-      document.addEventListener('CSDT-preview', () => {
+      document.addEventListener(CSDT.messages.preview.getTextFromParent(), () => {
         const scene = el.sceneEl.object3D;
-        CSDT.dispatchEvent('CSDT-preview-response', JSON.stringify(scene.toJSON()));
+        conn.sendResponse(CSDT.messages.preview, JSON.stringify(scene.toJSON()));
       });
     });
   },
@@ -17101,7 +17223,7 @@ AFRAME.registerComponent('csdt-container-receiver', {
   }
 });
 
-},{"./lib/csdt/export":"27RSa"}],"2aZ0c":[function(require,module,exports) {
+},{"../CSDT/dist/csdt":"b1pkp"}],"2aZ0c":[function(require,module,exports) {
 AFRAME.registerComponent('csdt-container-renderer', {
   init: function () {
     const el = this.el;
@@ -17295,6 +17417,6 @@ AFRAME.registerComponent('csdt-container-renderer', {
   },
 });
 
-},{}]},["3ydNP","556pz"], "556pz", "parcelRequireb2de")
+},{}]},["3Ue0W","556pz"], "556pz", "parcelRequireb2de")
 
 //# sourceMappingURL=export.js.map
