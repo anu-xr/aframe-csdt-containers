@@ -140,9 +140,9 @@
       this[globalName] = mainExports;
     }
   }
-})({"etR4I":[function(require,module,exports) {
+})({"jXlwU":[function(require,module,exports) {
 var HMR_HOST = null;
-var HMR_PORT = 62315;
+var HMR_PORT = 49543;
 var HMR_SECURE = false;
 var HMR_ENV_HASH = "d751713988987e9331980363e24189ce";
 module.bundle.HMR_BUNDLE_ID = "dcd721b617217ecd3e90b74d2c08edc6";
@@ -447,9 +447,9 @@ require('./csdt-container-receiver');
 require('./csdt-container-renderer');
 
 },{"./csdt-container":"PPNTz","./csdt-container-receiver":"6BgQA","./csdt-container-renderer":"2aZ0c"}],"PPNTz":[function(require,module,exports) {
-var _CSDTDistCsdt = require('../CSDT/dist/csdt');
+var _CSDTDistConnectionManager = require('../CSDT/dist/ConnectionManager');
 var _parcelHelpers = require("@parcel/transformer-js/lib/esmodule-helpers.js");
-var _CSDTDistCsdtDefault = _parcelHelpers.interopDefault(_CSDTDistCsdt);
+var _CSDTDistConnectionManagerDefault = _parcelHelpers.interopDefault(_CSDTDistConnectionManager);
 var _constants = require('./constants');
 AFRAME.registerComponent('csdt-container', {
   schema: {
@@ -505,7 +505,7 @@ AFRAME.registerComponent('csdt-container', {
     el.containerPos = new THREE.Vector3();
     el.connectionId = Math.random();
     // initialize CSDT if needed
-    if (!window.CSDT) window.CSDT = new _CSDTDistCsdtDefault.default();
+    if (!window.CSDT) window.CSDT = new _CSDTDistConnectionManagerDefault.default();
     // if there is not already a csdt-container-renderer entity, create one
     if (Array.from(el.sceneEl.children).reduce((acc, c) => acc || c.hasAttribute('csdt-container-renderer'), false) === false) {
       const entity = document.createElement('a-entity');
@@ -564,21 +564,20 @@ AFRAME.registerComponent('csdt-container', {
     const data = this.data;
     const CSDT = window.CSDT;
     _constants.customMessages.forEach(msg => CSDT.createMessage(...msg));
-    el.conn = CSDT.openConnection(data.href, el.connectionId);
-    const ydoc = el.CSDT.ydoc;
+    CSDT.openConnection(data.href, el.connectionId);
+    el.conn = CSDT.connections[el.connectionId];
+    const ydoc = el.conn.ydoc;
     el.ymap = ydoc.getMap(CSDT.hash);
     // load a preview
     if (data.enablePreview === true) {
       if (data.enableExternalRendering === true) return;
-      document.addEventListener(CSDT.messages.preview.getResponseTextFromChild(el.conn.hash), res => {
+      CSDT.messages.preview.onResponseFromChild(el.conn.hash, res => {
         const loader = new THREE.ObjectLoader();
         loader.parse(JSON.parse(String(res.detail)), obj => {
           obj.position.y -= data.height / 2;
           obj.position.add(el.object3D.getWorldPosition(new THREE.Vector3()));
           el.previewObj = obj;
         });
-      }, {
-        once: true
       });
       el.conn.sendMessage(CSDT.messages.preview);
     }
@@ -635,7 +634,57 @@ AFRAME.registerComponent('csdt-container', {
   }
 });
 
-},{"../CSDT/dist/csdt":"b1pkp","./constants":"5vBc0","@parcel/transformer-js/lib/esmodule-helpers.js":"5gA8y"}],"b1pkp":[function(require,module,exports) {
+},{"./constants":"5vBc0","../CSDT/dist/ConnectionManager":"2z3LX","@parcel/transformer-js/lib/esmodule-helpers.js":"5gA8y"}],"5vBc0":[function(require,module,exports) {
+var _parcelHelpers = require("@parcel/transformer-js/lib/esmodule-helpers.js");
+_parcelHelpers.defineInteropFlag(exports);
+_parcelHelpers.export(exports, "customMessages", function () {
+  return customMessages;
+});
+const customMessages = [['pixel', 'container-pixel-data', false, 'uint8array', null], ['preview', 'container-preview', true, null, 'uint8array'], ['render', 'container-render', false, null, null]];
+
+},{"@parcel/transformer-js/lib/esmodule-helpers.js":"5gA8y"}],"5gA8y":[function(require,module,exports) {
+"use strict";
+
+exports.interopDefault = function (a) {
+  return a && a.__esModule ? a : {
+    default: a
+  };
+};
+
+exports.defineInteropFlag = function (a) {
+  Object.defineProperty(a, '__esModule', {
+    value: true
+  });
+};
+
+exports.exportAll = function (source, dest) {
+  Object.keys(source).forEach(function (key) {
+    if (key === 'default' || key === '__esModule') {
+      return;
+    } // Skip duplicate re-exports when they have the same value.
+
+
+    if (key in dest && dest[key] === source[key]) {
+      return;
+    }
+
+    Object.defineProperty(dest, key, {
+      enumerable: true,
+      get: function () {
+        return source[key];
+      }
+    });
+  });
+  return dest;
+};
+
+exports.export = function (dest, destName, get) {
+  Object.defineProperty(dest, destName, {
+    enumerable: true,
+    get: get
+  });
+};
+},{}],"2z3LX":[function(require,module,exports) {
 var global = arguments[3];
 var define;
 // modules are defined as an array
@@ -732,12 +781,12 @@ var define;
     }
   }
 })({
-  "BMoB9": [function (require, module, exports) {
+  "2NkDl": [function (require, module, exports) {
     var HMR_HOST = null;
-    var HMR_PORT = 50856;
+    var HMR_PORT = 63894;
     var HMR_SECURE = false;
     var HMR_ENV_HASH = "d751713988987e9331980363e24189ce";
-    module.bundle.HMR_BUNDLE_ID = "9efd05a65559a3255aae87197b5561fd";
+    module.bundle.HMR_BUNDLE_ID = "ae2b747b7aca78582a08fc7ae56b5b61";
     // @flow
     /*global HMR_HOST, HMR_PORT, HMR_ENV_HASH, HMR_SECURE*/
     /*::
@@ -1029,7 +1078,7 @@ var define;
       acceptedAssets[id] = true;
     }
   }, {}],
-  "2pld4": [function (require, module, exports) {
+  "3PfhF": [function (require, module, exports) {
     var _parcelHelpers = require("@parcel/transformer-js/lib/esmodule-helpers.js");
     _parcelHelpers.defineInteropFlag(exports);
     var _Connection = require('./Connection');
@@ -1039,7 +1088,7 @@ var define;
     var _Message = require('./Message');
     var _MessageDefault = _parcelHelpers.interopDefault(_Message);
     var _constants = require('./constants');
-    class CSDT {
+    class ConnectionManager {
       constructor() {
         this.messages = {
           ..._constants.INTERNAL_MESSAGES
@@ -1062,7 +1111,7 @@ var define;
         this.messages[id] = message;
       }
     }
-    exports.default = CSDT;
+    exports.default = ConnectionManager;
   }, {
     "./Connection": "3Wl5K",
     "./ParentConnection": "22VJi",
@@ -1121,7 +1170,7 @@ var define;
             const d = message.convertResponse(e.detail);
             resolve(d);
           }, {
-            once: once
+            once: true
           });
           this.sendMessage(message, data);
         });
@@ -17010,9 +17059,18 @@ var define;
         return _helpers.convertType(data, this.responseDataType);
       }
       /*onEvent functions*/
+      onMessageFromParent(func) {
+        document.addEventListener(this.getTextFromParent(), func, {
+          once: true
+        });
+      }
+      onMessageFromChild(prefix, func) {
+        document.addEventListener(this.getTextFromChild(prefix), func, {
+          once: true
+        });
+      }
       onResponseFromParent(func) {
-        document.addEventListe;
-        ner(this.getResponseTextFromParent(), func, {
+        document.addEventListener(this.getResponseTextFromParent(), func, {
           once: true
         });
       }
@@ -17086,61 +17144,13 @@ var define;
     "./constants": "5vBc0",
     "@parcel/transformer-js/lib/esmodule-helpers.js": "2tbvz"
   }]
-}, ["BMoB9", "2pld4"], "2pld4", "parcelRequirecf62");
+}, ["2NkDl", "3PfhF"], "3PfhF", "parcelRequirecf62");
 
-},{}],"5vBc0":[function(require,module,exports) {
-var _parcelHelpers = require("@parcel/transformer-js/lib/esmodule-helpers.js");
-_parcelHelpers.defineInteropFlag(exports);
-_parcelHelpers.export(exports, "customMessages", function () {
-  return customMessages;
-});
-require('../CSDT/dist/csdt');
-const customMessages = [['pixel', 'container-pixel-data', false, 'uint8array', null], ['preview', 'container-preview', true, null, 'uint8array'], ['render', 'container-render', false, null, null]];
-
-},{"../CSDT/dist/csdt":"b1pkp","@parcel/transformer-js/lib/esmodule-helpers.js":"5gA8y"}],"5gA8y":[function(require,module,exports) {
-"use strict";
-
-exports.interopDefault = function (a) {
-  return a && a.__esModule ? a : {
-    default: a
-  };
-};
-
-exports.defineInteropFlag = function (a) {
-  Object.defineProperty(a, '__esModule', {
-    value: true
-  });
-};
-
-exports.exportAll = function (source, dest) {
-  Object.keys(source).forEach(function (key) {
-    if (key === 'default' || key === '__esModule') {
-      return;
-    } // Skip duplicate re-exports when they have the same value.
-
-
-    if (key in dest && dest[key] === source[key]) {
-      return;
-    }
-
-    Object.defineProperty(dest, key, {
-      enumerable: true,
-      get: function () {
-        return source[key];
-      }
-    });
-  });
-  return dest;
-};
-
-exports.export = function (dest, destName, get) {
-  Object.defineProperty(dest, destName, {
-    enumerable: true,
-    get: get
-  });
-};
 },{}],"6BgQA":[function(require,module,exports) {
-require('../CSDT/dist/csdt');
+var _CSDTDistConnectionManager = require('../CSDT/dist/ConnectionManager');
+var _parcelHelpers = require("@parcel/transformer-js/lib/esmodule-helpers.js");
+var _CSDTDistConnectionManagerDefault = _parcelHelpers.interopDefault(_CSDTDistConnectionManager);
+var _constants = require('./constants');
 AFRAME.registerComponent('csdt-container-receiver', {
   schema: {
     player: {
@@ -17152,21 +17162,20 @@ AFRAME.registerComponent('csdt-container-receiver', {
     const data = this.data;
     const renderer = el.sceneEl.renderer;
     // initialize CSDT if needed
-    if (!window.CSDT) window.CSDT = new CSDT();
+    if (!window.CSDT) window.CSDT = new _CSDTDistConnectionManagerDefault.default();
     const CSDT = window.CSDT;
     const conn = CSDT.connections.parent;
-    customMessages.forEach(msg => CSDT.createMessage(...msg));
+    _constants.customMessages.forEach(msg => CSDT.createMessage(...msg));
     el.connection_opened = false;
     el.camPos = new THREE.Vector3();
     el.camQuat = new THREE.Quaternion();
     if (document.querySelector(data.player)) el.player = document.querySelector(data.player).object3D; else el.player = el.sceneEl.camera.el.object3D;
-    document.addEventListener(CSDT.messages.open.getTextFromParent(), () => {
+    CSDT.messages.open.onMessageFromParent(() => {
       el.connection_opened = true;
-      CSDT.responseConnectionOpen(true);
       // disable aframe's render loop
       // we sync our render with the parent site, rather than using a separate clock
       el.sceneEl.renderer.setAnimationLoop(null);
-      const ydoc = CSDT.ydoc;
+      const ydoc = conn.ydoc;
       const ymap = ydoc.getMap(CSDT.hash);
       el.canvasWidth = ymap.get('canvasWidth') || 512;
       el.canvasHeight = ymap.get('canvasHeight') || 512;
@@ -17209,7 +17218,7 @@ AFRAME.registerComponent('csdt-container-receiver', {
         conn.sendMessage(CSDT.messages.pixel, el.pixels);
       });
       // when the parent requests a preview
-      document.addEventListener(CSDT.messages.preview.getTextFromParent(), () => {
+      CSDT.messages.preview.onMessageFromParent(() => {
         const scene = el.sceneEl.object3D;
         conn.sendResponse(CSDT.messages.preview, JSON.stringify(scene.toJSON()));
       });
@@ -17235,7 +17244,7 @@ AFRAME.registerComponent('csdt-container-receiver', {
   }
 });
 
-},{"../CSDT/dist/csdt":"b1pkp"}],"2aZ0c":[function(require,module,exports) {
+},{"../CSDT/dist/ConnectionManager":"2z3LX","@parcel/transformer-js/lib/esmodule-helpers.js":"5gA8y","./constants":"5vBc0"}],"2aZ0c":[function(require,module,exports) {
 AFRAME.registerComponent('csdt-container-renderer', {
   init: function () {
     const el = this.el;
@@ -17429,6 +17438,6 @@ AFRAME.registerComponent('csdt-container-renderer', {
   },
 });
 
-},{}]},["etR4I","556pz"], "556pz", "parcelRequireb2de")
+},{}]},["jXlwU","556pz"], "556pz", "parcelRequireb2de")
 
 //# sourceMappingURL=export.js.map

@@ -1,4 +1,4 @@
-import CSDT from '../CSDT/dist/csdt';
+import ConnectionManager from '../CSDT/dist/ConnectionManager';
 import { customMessages } from './constants';
 
 AFRAME.registerComponent('csdt-container', {
@@ -32,7 +32,7 @@ AFRAME.registerComponent('csdt-container', {
     el.connectionId = Math.random();
 
     //initialize CSDT if needed
-    if (!window.CSDT) window.CSDT = new CSDT();
+    if (!window.CSDT) window.CSDT = new ConnectionManager();
 
     //if there is not already a csdt-container-renderer entity, create one
     if (
@@ -95,28 +95,27 @@ AFRAME.registerComponent('csdt-container', {
 
     const CSDT = window.CSDT;
     customMessages.forEach((msg) => CSDT.createMessage(...msg));
-    el.conn = CSDT.openConnection(data.href, el.connectionId);
 
-    const ydoc = el.CSDT.ydoc;
+    CSDT.openConnection(data.href, el.connectionId);
+
+    el.conn = CSDT.connections[el.connectionId];
+
+    const ydoc = el.conn.ydoc;
     el.ymap = ydoc.getMap(CSDT.hash);
 
     //load a preview
     if (data.enablePreview === true) {
       if (data.enableExternalRendering === true) return;
 
-      document.addEventListener(
-        CSDT.messages.preview.getResponseTextFromChild(el.conn.hash),
-        (res) => {
-          const loader = new THREE.ObjectLoader();
-          loader.parse(JSON.parse(String(res.detail)), (obj) => {
-            obj.position.y -= data.height / 2;
-            obj.position.add(el.object3D.getWorldPosition(new THREE.Vector3()));
+      CSDT.messages.preview.onResponseFromChild(el.conn.hash, (res) => {
+        const loader = new THREE.ObjectLoader();
+        loader.parse(JSON.parse(String(res.detail)), (obj) => {
+          obj.position.y -= data.height / 2;
+          obj.position.add(el.object3D.getWorldPosition(new THREE.Vector3()));
 
-            el.previewObj = obj;
-          });
-        },
-        { once: true }
-      );
+          el.previewObj = obj;
+        });
+      });
 
       el.conn.sendMessage(CSDT.messages.preview);
     }

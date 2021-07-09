@@ -1,4 +1,5 @@
-import CSDT from '../CSDT/dist/csdt';
+import ConnectionManager from '../CSDT/dist/ConnectionManager';
+import { customMessages } from './constants';
 
 AFRAME.registerComponent('csdt-container-receiver', {
   schema: {
@@ -11,7 +12,8 @@ AFRAME.registerComponent('csdt-container-receiver', {
     const renderer = el.sceneEl.renderer;
 
     //initialize CSDT if needed
-    if (!window.CSDT) window.CSDT = new CSDT();
+    if (!window.CSDT) window.CSDT = new ConnectionManager();
+
     const CSDT = window.CSDT;
     const conn = CSDT.connections.parent;
     customMessages.forEach((msg) => CSDT.createMessage(...msg));
@@ -23,15 +25,14 @@ AFRAME.registerComponent('csdt-container-receiver', {
     if (document.querySelector(data.player)) el.player = document.querySelector(data.player).object3D;
     else el.player = el.sceneEl.camera.el.object3D;
 
-    document.addEventListener(CSDT.messages.open.getTextFromParent(), () => {
+    CSDT.messages.open.onMessageFromParent(() => {
       el.connection_opened = true;
-      CSDT.responseConnectionOpen(true);
 
       //disable aframe's render loop
       //we sync our render with the parent site, rather than using a separate clock
       el.sceneEl.renderer.setAnimationLoop(null);
 
-      const ydoc = CSDT.ydoc;
+      const ydoc = conn.ydoc;
       const ymap = ydoc.getMap(CSDT.hash);
 
       el.canvasWidth = ymap.get('canvasWidth') || 512;
@@ -88,7 +89,7 @@ AFRAME.registerComponent('csdt-container-receiver', {
       });
 
       //when the parent requests a preview
-      document.addEventListener(CSDT.messages.preview.getTextFromParent(), () => {
+      CSDT.messages.preview.onMessageFromParent(() => {
         const scene = el.sceneEl.object3D;
 
         conn.sendResponse(CSDT.messages.preview, JSON.stringify(scene.toJSON()));
