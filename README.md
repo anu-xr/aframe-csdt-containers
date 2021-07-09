@@ -1,5 +1,5 @@
 # aframe-csdt-containers
 
-An aframe component for loading instances of other sites using [CSDT](https://github.com/open-hubs/CSDT).
+An aframe component for nesting other sites within your scene using [CSDT](https://github.com/anu-xr/CSDT).
 
-![Example gif](https://github.com/open-hubs/aframe-csdt-containers/blob/master/examples/preview.gif)
+![Example gif](https://github.com/anu-xr/aframe-csdt-containers/blob/master/examples/preview.gif)
