@@ -25,7 +25,6 @@ AFRAME.registerComponent('csdt-container', {
     el.frames = 0;
     el.frameSkips = 1;
     el.has_iframe_loaded = false;
-    el.connection_established = false;
     el.camPos = new THREE.Vector3();
     el.camQuat = new THREE.Quaternion();
     el.containerPos = new THREE.Vector3();
@@ -84,9 +83,7 @@ AFRAME.registerComponent('csdt-container', {
       this.initializeIframe();
     }
 
-    el.initializeIframe = () => this.initializeIframe();
-
-    this.syncCanvasSize = AFRAME.utils.throttle(this.syncCanvasSize, 3000, this);
+    this.syncCanvasSize = AFRAME.utils.throttle(this.syncCanvasSize, 1000, this);
   },
 
   initializeIframe: function () {
@@ -101,29 +98,38 @@ AFRAME.registerComponent('csdt-container', {
     el.conn = CSDT.connections[el.connectionId];
 
     const ydoc = el.conn.ydoc;
-    el.ymap = ydoc.getMap(CSDT.hash);
+    el.ymap = ydoc.getMap(el.conn.hash);
+
+    CSDT.messages.open.onResponseFromChild(el.conn.hash, () => {
+      ydoc.transact(() => {
+        el.ymap.set('canvasWidth', 0);
+        el.ymap.set('canvasHeight', 0);
+      });
+    });
 
     //load a preview
     if (data.enablePreview === true) {
-      if (data.enableExternalRendering === true) return;
+      if (data.enableExternalRendering === false) {
+        el.conn.sendMessageWithResponse(CSDT.messages.preview).then((res) => {
+          const loader = new THREE.ObjectLoader();
+          loader.parse(JSON.parse(String(res.detail)), (obj) => {
+            obj.position.y -= data.height / 2;
+            obj.position.add(el.object3D.getWorldPosition(new THREE.Vector3()));
 
-      CSDT.messages.preview.onResponseFromChild(el.conn.hash, (res) => {
-        const loader = new THREE.ObjectLoader();
-        loader.parse(JSON.parse(String(res.detail)), (obj) => {
-          obj.position.y -= data.height / 2;
-          obj.position.add(el.object3D.getWorldPosition(new THREE.Vector3()));
-
-          el.previewObj = obj;
+            el.previewObj = obj;
+          });
         });
-      });
-
-      el.conn.sendMessage(CSDT.messages.preview);
+      }
     }
 
     //receive pixel data
-    document.addEventListener(CSDT.messages.pixel.getText(), (e) => {
-      el.pixels = new Uint8Array(e.detail);
-    });
+    CSDT.messages.pixel.onMessageFromChild(
+      el.conn.hash,
+      (e) => {
+        el.pixels = CSDT.messages.pixel.convertSent(e.detail);
+      },
+      false
+    );
   },
 
   update: function () {
@@ -136,7 +142,7 @@ AFRAME.registerComponent('csdt-container', {
   syncCanvasSize: function () {
     const el = this.el;
     const canvas = el.sceneEl.canvas;
-    const ydoc = el.CSDT.ydoc;
+    const ydoc = el.conn.ydoc;
     const ymap = el.ymap;
 
     if (ymap.get('canvasWidth') === canvas.width && ymap.get('canvasHeight') === canvas.height) return;
@@ -154,7 +160,7 @@ AFRAME.registerComponent('csdt-container', {
     const el = this.el;
     const data = this.data;
     const camera = el.sceneEl.camera;
-    const ydoc = el.CSDT.ydoc;
+    const ydoc = el.conn.ydoc;
     const ymap = el.ymap;
 
     //sync canvas size
@@ -187,6 +193,6 @@ AFRAME.registerComponent('csdt-container', {
     });
 
     //tell child to render
-    el.conn.sendMessage(window.CSDT.messages.render);
+    el.conn.sendMessage(CSDT.messages.render);
   },
 });

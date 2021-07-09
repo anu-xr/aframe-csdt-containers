@@ -7,9 +7,8 @@ AFRAME.registerComponent('csdt-container-renderer', {
     el.raycaster = new THREE.Raycaster();
     el.raycastCoords = new THREE.Vector2(0, 0);
 
-    //temp values until we get data from the parent site
-    const width = 512;
-    const height = 512;
+    const width = 0;
+    const height = 0;
 
     const geometry = new THREE.PlaneGeometry(width, height);
     const material = new THREE.MeshBasicMaterial({ transparent: true });
@@ -141,7 +140,7 @@ AFRAME.registerComponent('csdt-container-renderer', {
         if (!obj.el.iframe) obj.el.initializeIframe();
       }
 
-      if (obj.el.connection_established !== true) return;
+      if (obj.el.conn.connectionOpened !== true) return;
 
       if (++obj.el.frames % obj.el.frameSkips === 0) {
         obj.el.components['csdt-container'].syncData();

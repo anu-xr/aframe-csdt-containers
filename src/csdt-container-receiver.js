@@ -18,7 +18,6 @@ AFRAME.registerComponent('csdt-container-receiver', {
     const conn = CSDT.connections.parent;
     customMessages.forEach((msg) => CSDT.createMessage(...msg));
 
-    el.connection_opened = false;
     el.camPos = new THREE.Vector3();
     el.camQuat = new THREE.Quaternion();
 
@@ -26,19 +25,16 @@ AFRAME.registerComponent('csdt-container-receiver', {
     else el.player = el.sceneEl.camera.el.object3D;
 
     CSDT.messages.open.onMessageFromParent(() => {
-      el.connection_opened = true;
-
       //disable aframe's render loop
       //we sync our render with the parent site, rather than using a separate clock
       el.sceneEl.renderer.setAnimationLoop(null);
 
       const ydoc = conn.ydoc;
-      const ymap = ydoc.getMap(CSDT.hash);
+      const ymap = ydoc.getMap(conn.hash);
 
-      el.canvasWidth = ymap.get('canvasWidth') || 512;
-      el.canvasHeight = ymap.get('canvasHeight') || 512;
-
-      el.pixels = new Uint8Array(el.canvasWidth * el.canvasHeight * 4);
+      el.canvasWidth = 0;
+      el.canvasHeight = 0;
+      el.pixels = new Uint8Array(0);
 
       el.renderTarget = new THREE.WebGLRenderTarget(el.canvasWidth, el.canvasHeight);
       renderer.setRenderTarget(el.renderTarget);
@@ -64,8 +60,8 @@ AFRAME.registerComponent('csdt-container-receiver', {
         });
       });
 
-      //when the parent site tells us to render
-      document.addEventListener(CSDT.messages.render.getTextFromParent(), () => {
+      //when the parent site requests a render
+      CSDT.messages.render.onMessageFromParent(() => {
         const el = this.el;
         const sceneEl = el.sceneEl;
         const renderer = sceneEl.renderer;
@@ -86,14 +82,13 @@ AFRAME.registerComponent('csdt-container-receiver', {
         //send pixel data to parent
         //use an event rather than yjs to transfer data for performance reasons, el.pixels is very large
         conn.sendMessage(CSDT.messages.pixel, el.pixels);
-      });
+      }, false);
 
       //when the parent requests a preview
       CSDT.messages.preview.onMessageFromParent(() => {
         const scene = el.sceneEl.object3D;
-
         conn.sendResponse(CSDT.messages.preview, JSON.stringify(scene.toJSON()));
-      });
+      }, false);
     });
   },
 
