@@ -140,9 +140,9 @@
       this[globalName] = mainExports;
     }
   }
-})({"3Ue0W":[function(require,module,exports) {
+})({"etR4I":[function(require,module,exports) {
 var HMR_HOST = null;
-var HMR_PORT = 53733;
+var HMR_PORT = 62315;
 var HMR_SECURE = false;
 var HMR_ENV_HASH = "d751713988987e9331980363e24189ce";
 module.bundle.HMR_BUNDLE_ID = "dcd721b617217ecd3e90b74d2c08edc6";
@@ -732,9 +732,9 @@ var define;
     }
   }
 })({
-  "5p6Wz": [function (require, module, exports) {
+  "BMoB9": [function (require, module, exports) {
     var HMR_HOST = null;
-    var HMR_PORT = 53732;
+    var HMR_PORT = 50856;
     var HMR_SECURE = false;
     var HMR_ENV_HASH = "d751713988987e9331980363e24189ce";
     module.bundle.HMR_BUNDLE_ID = "9efd05a65559a3255aae87197b5561fd";
@@ -1084,7 +1084,7 @@ var define;
         this.ydoc = new _yjs.Doc();
         this.connectionOpened = false;
         // receive ydoc updates
-        _constants.INTERNAL_MESSAGES.update.onResponse(data => {
+        _constants.INTERNAL_MESSAGES.update.onResponseFromChild(this.hash, data => {
           _yjs.applyUpdate(this.ydoc, data);
         });
         // send ydoc updates
@@ -17009,6 +17009,18 @@ var define;
       convertResponse(data) {
         return _helpers.convertType(data, this.responseDataType);
       }
+      /*onEvent functions*/
+      onResponseFromParent(func) {
+        document.addEventListe;
+        ner(this.getResponseTextFromParent(), func, {
+          once: true
+        });
+      }
+      onResponseFromChild(prefix, func) {
+        document.addEventListener(this.getResponseTextFromChild(prefix), func, {
+          once: true
+        });
+      }
     }
     exports.default = Message;
   }, {
@@ -17026,7 +17038,7 @@ var define;
         this.ydoc = new _yjs.Doc();
         this.connectionOpened = false;
         // receive ydoc updates
-        _constants.INTERNAL_MESSAGES.update.onResponse(data => {
+        _constants.INTERNAL_MESSAGES.update.onResponseFromParent(data => {
           _yjs.applyUpdate(this.ydoc, data);
         });
         // send ydoc updates
@@ -17074,7 +17086,7 @@ var define;
     "./constants": "5vBc0",
     "@parcel/transformer-js/lib/esmodule-helpers.js": "2tbvz"
   }]
-}, ["5p6Wz", "2pld4"], "2pld4", "parcelRequirecf62");
+}, ["BMoB9", "2pld4"], "2pld4", "parcelRequirecf62");
 
 },{}],"5vBc0":[function(require,module,exports) {
 var _parcelHelpers = require("@parcel/transformer-js/lib/esmodule-helpers.js");
@@ -17417,6 +17429,6 @@ AFRAME.registerComponent('csdt-container-renderer', {
   },
 });
 
-},{}]},["3Ue0W","556pz"], "556pz", "parcelRequireb2de")
+},{}]},["etR4I","556pz"], "556pz", "parcelRequireb2de")
 
 //# sourceMappingURL=export.js.map
