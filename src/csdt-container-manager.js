@@ -1,4 +1,4 @@
-AFRAME.registerComponent('csdt-container-renderer', {
+AFRAME.registerSystem('csdt-container-manager', {
   init: function () {
     const el = this.el;
 
@@ -92,6 +92,8 @@ AFRAME.registerComponent('csdt-container-renderer', {
     const gl = renderer.getContext();
     const containers = el.sceneEl.containers;
     renderer.autoClear = false;
+
+    if (!containers) return;
 
     el.emit('tock');
 

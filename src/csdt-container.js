@@ -27,22 +27,7 @@ AFRAME.registerComponent('csdt-container', {
     el.containerPos = new THREE.Vector3();
     el.connectionId = Math.random();
 
-    //if there is not already a csdt-container-renderer entity, create one
-    if (
-      Array.from(el.sceneEl.children).reduce((acc, c) => acc || c.hasAttribute('csdt-container-renderer'), false) ===
-      false
-    ) {
-      const entity = document.createElement('a-entity');
-      entity.setAttribute('csdt-container-renderer', {});
-      el.sceneEl.appendChild(entity);
-    }
-
-    //use sceneEl to store state
-    if (!el.sceneEl.containers) {
-      el.sceneEl.containers = [];
-    }
-
-    el.sceneEl.containers.push({ el: el, data: data });
+    el.sceneEl.systems['csdt-container-manager'].containers.push({ el: el, data: data });
 
     //create container mesh
     const geometry1 = new THREE.BoxBufferGeometry(data.width, data.height, data.depth);

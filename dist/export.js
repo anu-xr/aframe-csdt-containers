@@ -444,9 +444,9 @@ id) /*: string*/
 },{}],"556pz":[function(require,module,exports) {
 require('./csdt-container');
 require('./csdt-container-receiver');
-require('./csdt-container-renderer');
+require('./csdt-container-manager');
 
-},{"./csdt-container":"PPNTz","./csdt-container-receiver":"6BgQA","./csdt-container-renderer":"2aZ0c"}],"PPNTz":[function(require,module,exports) {
+},{"./csdt-container":"PPNTz","./csdt-container-receiver":"6BgQA","./csdt-container-manager":"4ppA8"}],"PPNTz":[function(require,module,exports) {
 var _CSDTDistCSDT = require('../CSDT/dist/CSDT');
 var _constants = require('./constants');
 AFRAME.registerComponent('csdt-container', {
@@ -492,17 +492,7 @@ AFRAME.registerComponent('csdt-container', {
     el.camQuat = new THREE.Quaternion();
     el.containerPos = new THREE.Vector3();
     el.connectionId = Math.random();
-    // if there is not already a csdt-container-renderer entity, create one
-    if (Array.from(el.sceneEl.children).reduce((acc, c) => acc || c.hasAttribute('csdt-container-renderer'), false) === false) {
-      const entity = document.createElement('a-entity');
-      entity.setAttribute('csdt-container-renderer', {});
-      el.sceneEl.appendChild(entity);
-    }
-    // use sceneEl to store state
-    if (!el.sceneEl.containers) {
-      el.sceneEl.containers = [];
-    }
-    el.sceneEl.containers.push({
+    el.sceneEl.systems['csdt-container-manager'].containers.push({
       el: el,
       data: data
     });
@@ -17223,8 +17213,8 @@ AFRAME.registerComponent('csdt-container-receiver', {
   }
 });
 
-},{"./constants":"5vBc0","../CSDT/dist/CSDT":"5Ajwx"}],"2aZ0c":[function(require,module,exports) {
-AFRAME.registerComponent('csdt-container-renderer', {
+},{"./constants":"5vBc0","../CSDT/dist/CSDT":"5Ajwx"}],"4ppA8":[function(require,module,exports) {
+AFRAME.registerSystem('csdt-container-manager', {
   init: function () {
     const el = this.el;
 
@@ -17318,6 +17308,8 @@ AFRAME.registerComponent('csdt-container-renderer', {
     const gl = renderer.getContext();
     const containers = el.sceneEl.containers;
     renderer.autoClear = false;
+
+    if (!containers) return;
 
     el.emit('tock');
 
