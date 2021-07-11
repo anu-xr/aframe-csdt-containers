@@ -1,4 +1,4 @@
-import ConnectionManager from '../CSDT/dist/ConnectionManager';
+import { CSDT } from '../CSDT/dist/CSDT';
 import { customMessages } from './constants';
 
 AFRAME.registerComponent('csdt-container-receiver', {
@@ -11,10 +11,6 @@ AFRAME.registerComponent('csdt-container-receiver', {
     const data = this.data;
     const renderer = el.sceneEl.renderer;
 
-    //initialize CSDT if needed
-    if (!window.CSDT) window.CSDT = new ConnectionManager();
-
-    const CSDT = window.CSDT;
     const conn = CSDT.connections.parent;
     customMessages.forEach((msg) => CSDT.createMessage(...msg));
 

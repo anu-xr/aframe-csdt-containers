@@ -140,9 +140,9 @@
       this[globalName] = mainExports;
     }
   }
-})({"eHpCr":[function(require,module,exports) {
+})({"6jH1L":[function(require,module,exports) {
 var HMR_HOST = null;
-var HMR_PORT = 61633;
+var HMR_PORT = 57046;
 var HMR_SECURE = false;
 var HMR_ENV_HASH = "d751713988987e9331980363e24189ce";
 module.bundle.HMR_BUNDLE_ID = "dcd721b617217ecd3e90b74d2c08edc6";
@@ -447,9 +447,7 @@ require('./csdt-container-receiver');
 require('./csdt-container-renderer');
 
 },{"./csdt-container":"PPNTz","./csdt-container-receiver":"6BgQA","./csdt-container-renderer":"2aZ0c"}],"PPNTz":[function(require,module,exports) {
-var _CSDTDistConnectionManager = require('../CSDT/dist/ConnectionManager');
-var _parcelHelpers = require("@parcel/transformer-js/lib/esmodule-helpers.js");
-var _CSDTDistConnectionManagerDefault = _parcelHelpers.interopDefault(_CSDTDistConnectionManager);
+var _CSDTDistCSDT = require('../CSDT/dist/CSDT');
 var _constants = require('./constants');
 AFRAME.registerComponent('csdt-container', {
   schema: {
@@ -494,8 +492,6 @@ AFRAME.registerComponent('csdt-container', {
     el.camQuat = new THREE.Quaternion();
     el.containerPos = new THREE.Vector3();
     el.connectionId = Math.random();
-    // initialize CSDT if needed
-    if (!window.CSDT) window.CSDT = new _CSDTDistConnectionManagerDefault.default();
     // if there is not already a csdt-container-renderer entity, create one
     if (Array.from(el.sceneEl.children).reduce((acc, c) => acc || c.hasAttribute('csdt-container-renderer'), false) === false) {
       const entity = document.createElement('a-entity');
@@ -538,13 +534,12 @@ AFRAME.registerComponent('csdt-container', {
   initializeIframe: function () {
     const el = this.el;
     const data = this.data;
-    const CSDT = window.CSDT;
-    _constants.customMessages.forEach(msg => CSDT.createMessage(...msg));
-    CSDT.openConnection(data.href, el.connectionId);
-    el.conn = CSDT.connections[el.connectionId];
+    _constants.customMessages.forEach(msg => _CSDTDistCSDT.CSDT.createMessage(...msg));
+    _CSDTDistCSDT.CSDT.openConnection(data.href, el.connectionId);
+    el.conn = _CSDTDistCSDT.CSDT.connections[el.connectionId];
     const ydoc = el.conn.ydoc;
     el.ymap = ydoc.getMap(el.conn.hash);
-    el.conn.onResponse(CSDT.messages.open, () => {
+    el.conn.onResponse(_CSDTDistCSDT.CSDT.messages.open, () => {
       ydoc.transact(() => {
         el.ymap.set('canvasWidth', 0);
         el.ymap.set('canvasHeight', 0);
@@ -553,7 +548,7 @@ AFRAME.registerComponent('csdt-container', {
     // load a preview
     if (data.enablePreview === true) {
       if (data.enableExternalRendering === false) {
-        el.conn.sendMessageWithResponse(CSDT.messages.preview).then(res => {
+        el.conn.sendMessageWithResponse(_CSDTDistCSDT.CSDT.messages.preview).then(res => {
           const loader = new THREE.ObjectLoader();
           loader.parse(JSON.parse(String(res.detail)), obj => {
             obj.position.y -= data.height / 2;
@@ -564,8 +559,8 @@ AFRAME.registerComponent('csdt-container', {
       }
     }
     // receive pixel data
-    el.conn.onMessage(CSDT.messages.pixel, e => {
-      el.pixels = CSDT.messages.pixel.convertSent(e.detail);
+    el.conn.onMessage(_CSDTDistCSDT.CSDT.messages.pixel, e => {
+      el.pixels = _CSDTDistCSDT.CSDT.messages.pixel.convertSent(e.detail);
     });
   },
   update: function () {
@@ -614,11 +609,61 @@ AFRAME.registerComponent('csdt-container', {
       ymap.set('cameraQuaternion', el.camQuat.toArray());
     });
     // tell child to render
-    el.conn.sendMessage(CSDT.messages.render);
+    el.conn.sendMessage(_CSDTDistCSDT.CSDT.messages.render);
   }
 });
 
-},{"../CSDT/dist/ConnectionManager":"2z3LX","./constants":"5vBc0","@parcel/transformer-js/lib/esmodule-helpers.js":"5gA8y"}],"2z3LX":[function(require,module,exports) {
+},{"./constants":"5vBc0","../CSDT/dist/CSDT":"5Ajwx"}],"5vBc0":[function(require,module,exports) {
+var _parcelHelpers = require("@parcel/transformer-js/lib/esmodule-helpers.js");
+_parcelHelpers.defineInteropFlag(exports);
+_parcelHelpers.export(exports, "customMessages", function () {
+  return customMessages;
+});
+const customMessages = [['pixel', 'container-pixel-data', false, 'uint8array', null], ['preview', 'container-preview', true, null, 'uint8array'], ['render', 'container-render', false, null, null]];
+
+},{"@parcel/transformer-js/lib/esmodule-helpers.js":"5gA8y"}],"5gA8y":[function(require,module,exports) {
+"use strict";
+
+exports.interopDefault = function (a) {
+  return a && a.__esModule ? a : {
+    default: a
+  };
+};
+
+exports.defineInteropFlag = function (a) {
+  Object.defineProperty(a, '__esModule', {
+    value: true
+  });
+};
+
+exports.exportAll = function (source, dest) {
+  Object.keys(source).forEach(function (key) {
+    if (key === 'default' || key === '__esModule') {
+      return;
+    } // Skip duplicate re-exports when they have the same value.
+
+
+    if (key in dest && dest[key] === source[key]) {
+      return;
+    }
+
+    Object.defineProperty(dest, key, {
+      enumerable: true,
+      get: function () {
+        return source[key];
+      }
+    });
+  });
+  return dest;
+};
+
+exports.export = function (dest, destName, get) {
+  Object.defineProperty(dest, destName, {
+    enumerable: true,
+    get: get
+  });
+};
+},{}],"5Ajwx":[function(require,module,exports) {
 var global = arguments[3];
 var define;
 // modules are defined as an array
@@ -715,12 +760,12 @@ var define;
     }
   }
 })({
-  "2rZXB": [function (require, module, exports) {
+  "1j9fz": [function (require, module, exports) {
     var HMR_HOST = null;
     var HMR_PORT = 1234;
     var HMR_SECURE = false;
     var HMR_ENV_HASH = "d751713988987e9331980363e24189ce";
-    module.bundle.HMR_BUNDLE_ID = "ae2b747b7aca78582a08fc7ae56b5b61";
+    module.bundle.HMR_BUNDLE_ID = "9efd05a65559a3255aae87197b5561fd";
     // @flow
     /*global HMR_HOST, HMR_PORT, HMR_ENV_HASH, HMR_SECURE*/
     /*::
@@ -1012,6 +1057,19 @@ var define;
       acceptedAssets[id] = true;
     }
   }, {}],
+  "2pld4": [function (require, module, exports) {
+    var _parcelHelpers = require("@parcel/transformer-js/lib/esmodule-helpers.js");
+    _parcelHelpers.defineInteropFlag(exports);
+    _parcelHelpers.export(exports, "CSDT", function () {
+      return CSDT;
+    });
+    var _ConnectionManager = require('./ConnectionManager');
+    var _ConnectionManagerDefault = _parcelHelpers.interopDefault(_ConnectionManager);
+    const CSDT = new _ConnectionManagerDefault.default();
+  }, {
+    "./ConnectionManager": "3PfhF",
+    "@parcel/transformer-js/lib/esmodule-helpers.js": "5gA8y"
+  }],
   "3PfhF": [function (require, module, exports) {
     var _parcelHelpers = require("@parcel/transformer-js/lib/esmodule-helpers.js");
     _parcelHelpers.defineInteropFlag(exports);
@@ -17072,62 +17130,10 @@ var define;
     "./constants": "5vBc0",
     "@parcel/transformer-js/lib/esmodule-helpers.js": "5gA8y"
   }]
-}, ["2rZXB", "3PfhF"], "3PfhF", "parcelRequirecf62");
+}, ["1j9fz", "2pld4"], "2pld4", "parcelRequirecf62");
 
-},{}],"5vBc0":[function(require,module,exports) {
-var _parcelHelpers = require("@parcel/transformer-js/lib/esmodule-helpers.js");
-_parcelHelpers.defineInteropFlag(exports);
-_parcelHelpers.export(exports, "customMessages", function () {
-  return customMessages;
-});
-const customMessages = [['pixel', 'container-pixel-data', false, 'uint8array', null], ['preview', 'container-preview', true, null, 'uint8array'], ['render', 'container-render', false, null, null]];
-
-},{"@parcel/transformer-js/lib/esmodule-helpers.js":"5gA8y"}],"5gA8y":[function(require,module,exports) {
-"use strict";
-
-exports.interopDefault = function (a) {
-  return a && a.__esModule ? a : {
-    default: a
-  };
-};
-
-exports.defineInteropFlag = function (a) {
-  Object.defineProperty(a, '__esModule', {
-    value: true
-  });
-};
-
-exports.exportAll = function (source, dest) {
-  Object.keys(source).forEach(function (key) {
-    if (key === 'default' || key === '__esModule') {
-      return;
-    } // Skip duplicate re-exports when they have the same value.
-
-
-    if (key in dest && dest[key] === source[key]) {
-      return;
-    }
-
-    Object.defineProperty(dest, key, {
-      enumerable: true,
-      get: function () {
-        return source[key];
-      }
-    });
-  });
-  return dest;
-};
-
-exports.export = function (dest, destName, get) {
-  Object.defineProperty(dest, destName, {
-    enumerable: true,
-    get: get
-  });
-};
 },{}],"6BgQA":[function(require,module,exports) {
-var _CSDTDistConnectionManager = require('../CSDT/dist/ConnectionManager');
-var _parcelHelpers = require("@parcel/transformer-js/lib/esmodule-helpers.js");
-var _CSDTDistConnectionManagerDefault = _parcelHelpers.interopDefault(_CSDTDistConnectionManager);
+var _CSDTDistCSDT = require('../CSDT/dist/CSDT');
 var _constants = require('./constants');
 AFRAME.registerComponent('csdt-container-receiver', {
   schema: {
@@ -17139,15 +17145,12 @@ AFRAME.registerComponent('csdt-container-receiver', {
     const el = this.el;
     const data = this.data;
     const renderer = el.sceneEl.renderer;
-    // initialize CSDT if needed
-    if (!window.CSDT) window.CSDT = new _CSDTDistConnectionManagerDefault.default();
-    const CSDT = window.CSDT;
-    const conn = CSDT.connections.parent;
-    _constants.customMessages.forEach(msg => CSDT.createMessage(...msg));
+    const conn = _CSDTDistCSDT.CSDT.connections.parent;
+    _constants.customMessages.forEach(msg => _CSDTDistCSDT.CSDT.createMessage(...msg));
     el.camPos = new THREE.Vector3();
     el.camQuat = new THREE.Quaternion();
     if (document.querySelector(data.player)) el.player = document.querySelector(data.player).object3D; else el.player = el.sceneEl.camera.el.object3D;
-    conn.onMessage(CSDT.messages.open, () => {
+    conn.onMessage(_CSDTDistCSDT.CSDT.messages.open, () => {
       // disable aframe's render loop
       // we sync our render with the parent site, rather than using a separate clock
       el.sceneEl.renderer.setAnimationLoop(null);
@@ -17176,7 +17179,7 @@ AFRAME.registerComponent('csdt-container-receiver', {
         });
       });
       // when the parent site requests a render
-      conn.onMessage(CSDT.messages.render, () => {
+      conn.onMessage(_CSDTDistCSDT.CSDT.messages.render, () => {
         const el = this.el;
         const sceneEl = el.sceneEl;
         const renderer = sceneEl.renderer;
@@ -17191,12 +17194,12 @@ AFRAME.registerComponent('csdt-container-receiver', {
         renderer.readRenderTargetPixels(el.renderTarget, 0, 0, el.canvasWidth, el.canvasHeight, el.pixels);
         // send pixel data to parent
         // use an event rather than yjs to transfer data for performance reasons, el.pixels is very large
-        conn.sendMessage(CSDT.messages.pixel, el.pixels);
+        conn.sendMessage(_CSDTDistCSDT.CSDT.messages.pixel, el.pixels);
       });
       // when the parent requests a preview
-      conn.onMessage(CSDT.messages.preview, () => {
+      conn.onMessage(_CSDTDistCSDT.CSDT.messages.preview, () => {
         const scene = el.sceneEl.object3D;
-        conn.sendResponse(CSDT.messages.preview, JSON.stringify(scene.toJSON()));
+        conn.sendResponse(_CSDTDistCSDT.CSDT.messages.preview, JSON.stringify(scene.toJSON()));
       });
     });
   },
@@ -17220,7 +17223,7 @@ AFRAME.registerComponent('csdt-container-receiver', {
   }
 });
 
-},{"../CSDT/dist/ConnectionManager":"2z3LX","./constants":"5vBc0","@parcel/transformer-js/lib/esmodule-helpers.js":"5gA8y"}],"2aZ0c":[function(require,module,exports) {
+},{"./constants":"5vBc0","../CSDT/dist/CSDT":"5Ajwx"}],"2aZ0c":[function(require,module,exports) {
 AFRAME.registerComponent('csdt-container-renderer', {
   init: function () {
     const el = this.el;
@@ -17413,6 +17416,6 @@ AFRAME.registerComponent('csdt-container-renderer', {
   },
 });
 
-},{}]},["eHpCr","556pz"], "556pz", "parcelRequireb2de")
+},{}]},["6jH1L","556pz"], "556pz", "parcelRequireb2de")
 
 //# sourceMappingURL=export.js.map

@@ -1,4 +1,4 @@
-import ConnectionManager from '../CSDT/dist/ConnectionManager';
+import { CSDT } from '../CSDT/dist/CSDT';
 import { customMessages } from './constants';
 
 AFRAME.registerComponent('csdt-container', {
@@ -26,9 +26,6 @@ AFRAME.registerComponent('csdt-container', {
     el.camQuat = new THREE.Quaternion();
     el.containerPos = new THREE.Vector3();
     el.connectionId = Math.random();
-
-    //initialize CSDT if needed
-    if (!window.CSDT) window.CSDT = new ConnectionManager();
 
     //if there is not already a csdt-container-renderer entity, create one
     if (
@@ -77,7 +74,6 @@ AFRAME.registerComponent('csdt-container', {
     const el = this.el;
     const data = this.data;
 
-    const CSDT = window.CSDT;
     customMessages.forEach((msg) => CSDT.createMessage(...msg));
 
     CSDT.openConnection(data.href, el.connectionId);
