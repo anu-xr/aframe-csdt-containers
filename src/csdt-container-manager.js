@@ -2,6 +2,8 @@ AFRAME.registerSystem('csdt-container-manager', {
   init: function () {
     const el = this.el;
 
+    this.containers = [];
+
     el.camPos = new THREE.Vector3();
     el.tmpVector = new THREE.Vector3();
     el.raycaster = new THREE.Raycaster();
