@@ -17334,7 +17334,7 @@ AFRAME.registerSystem('csdt-container-manager', {
 
   handleInputEvent: function (source, event, name) {
     const el = this.el;
-    const containers = el.sceneEl.containers;
+    const containers = this.containers;
     const camera = el.sceneEl.camera;
 
     source.addEventListener(event, () => {
@@ -17366,7 +17366,7 @@ AFRAME.registerSystem('csdt-container-manager', {
     const camera = el.sceneEl.camera;
     const renderer = el.sceneEl.renderer;
     const gl = renderer.getContext();
-    const containers = el.sceneEl.containers;
+    const containers = this.containers;
     renderer.autoClear = false;
 
     if (!containers) return;
