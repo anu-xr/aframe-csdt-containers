@@ -60,29 +60,27 @@ AFRAME.registerComponent('csdt-container', {
   initializeIframe: function () {
     const el = this.el;
     const data = this.data;
+    const canvas = el.sceneEl.canvas;
 
     el.conn = CSDT.openConnection(data.href, el.connectionId);
 
     const ydoc = el.conn.ydoc;
     el.ymap = ydoc.getMap(el.conn.hash);
 
-    el.conn.onResponse(
-      CSDT.messages.open,
-      () => {
-        ydoc.transact(() => {
-          el.ymap.set('canvasWidth', 0);
-          el.ymap.set('canvasHeight', 0);
-        });
-      },
-      true
-    );
+    el.conn.onResponse(CSDT.messages.open, () => {
+      ydoc.transact(() => {
+        el.ymap.set('canvasWidth', canvas.width);
+        el.ymap.set('canvasHeight', canvas.height);
+      });
+    });
 
     //load a preview
     if (data.enablePreview === true) {
       if (data.enableExternalRendering === false) {
-        el.conn.sendMessageWithResponse(CSDT.messages.preview).then((res) => {
+        el.conn.sendMessageWithResponse(CSDT.messages.preview).then((data) => {
           const loader = new THREE.ObjectLoader();
-          loader.parse(JSON.parse(String(res.detail)), (obj) => {
+
+          loader.parse(JSON.parse(data), (obj) => {
             obj.position.y -= data.height / 2;
             obj.position.add(el.object3D.getWorldPosition(new THREE.Vector3()));
 
@@ -93,8 +91,8 @@ AFRAME.registerComponent('csdt-container', {
     }
 
     //receive pixel data
-    el.conn.onMessage(CSDT.messages.pixel, (e) => {
-      el.pixels = CSDT.messages.pixel.convertSent(e.detail);
+    el.conn.onMessage(CSDT.messages.pixel, (data) => {
+      el.pixels = data;
     });
   },
 
