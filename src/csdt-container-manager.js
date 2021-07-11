@@ -75,7 +75,7 @@ AFRAME.registerSystem('csdt-container-manager', {
 
             if (isInContainer === true) {
               //send input to child site
-              obj.el.CSDT.dispatchEvent(`${event}-${name}`);
+              obj.el.conn.iframe.dispatchEvent(`${event}-${name}`);
             }
           });
         },
