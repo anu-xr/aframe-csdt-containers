@@ -100,12 +100,16 @@ AFRAME.registerComponent('csdt-container', {
     const ydoc = el.conn.ydoc;
     el.ymap = ydoc.getMap(el.conn.hash);
 
-    CSDT.messages.open.onResponseFromChild(el.conn.hash, () => {
-      ydoc.transact(() => {
-        el.ymap.set('canvasWidth', 0);
-        el.ymap.set('canvasHeight', 0);
-      });
-    });
+    el.conn.onResponse(
+      CSDT.messages.open,
+      () => {
+        ydoc.transact(() => {
+          el.ymap.set('canvasWidth', 0);
+          el.ymap.set('canvasHeight', 0);
+        });
+      },
+      true
+    );
 
     //load a preview
     if (data.enablePreview === true) {
@@ -123,13 +127,9 @@ AFRAME.registerComponent('csdt-container', {
     }
 
     //receive pixel data
-    CSDT.messages.pixel.onMessageFromChild(
-      el.conn.hash,
-      (e) => {
-        el.pixels = CSDT.messages.pixel.convertSent(e.detail);
-      },
-      false
-    );
+    el.conn.onMessage(CSDT.messages.pixel, (e) => {
+      el.pixels = CSDT.messages.pixel.convertSent(e.detail);
+    });
   },
 
   update: function () {

@@ -24,7 +24,7 @@ AFRAME.registerComponent('csdt-container-receiver', {
     if (document.querySelector(data.player)) el.player = document.querySelector(data.player).object3D;
     else el.player = el.sceneEl.camera.el.object3D;
 
-    CSDT.messages.open.onMessageFromParent(() => {
+    conn.onMessage(CSDT.messages.open, () => {
       //disable aframe's render loop
       //we sync our render with the parent site, rather than using a separate clock
       el.sceneEl.renderer.setAnimationLoop(null);
@@ -61,7 +61,7 @@ AFRAME.registerComponent('csdt-container-receiver', {
       });
 
       //when the parent site requests a render
-      CSDT.messages.render.onMessageFromParent(() => {
+      conn.onMessage(CSDT.messages.render, () => {
         const el = this.el;
         const sceneEl = el.sceneEl;
         const renderer = sceneEl.renderer;
@@ -82,13 +82,13 @@ AFRAME.registerComponent('csdt-container-receiver', {
         //send pixel data to parent
         //use an event rather than yjs to transfer data for performance reasons, el.pixels is very large
         conn.sendMessage(CSDT.messages.pixel, el.pixels);
-      }, false);
+      });
 
       //when the parent requests a preview
-      CSDT.messages.preview.onMessageFromParent(() => {
+      conn.onMessage(CSDT.messages.preview, () => {
         const scene = el.sceneEl.object3D;
         conn.sendResponse(CSDT.messages.preview, JSON.stringify(scene.toJSON()));
-      }, false);
+      });
     });
   },
 
