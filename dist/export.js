@@ -463,22 +463,22 @@ AFRAME.registerComponent('csdt-container', {
     depth: {
       default: 8
     },
-    enableInstantInitialization: {
-      default: true
-    },
     enableExternalRendering: {
       default: true
     },
-    enablePreview: {
+    enableFrameSkips: {
+      default: true
+    },
+    enableInstantInitialization: {
       default: true
     },
     enableInteraction: {
       default: true
     },
-    enableWireframe: {
-      default: false
+    enablePreview: {
+      default: true
     },
-    enableFrameSkips: {
+    enableWireframe: {
       default: true
     }
   },

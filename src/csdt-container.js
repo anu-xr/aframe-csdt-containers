@@ -7,12 +7,12 @@ AFRAME.registerComponent('csdt-container', {
     width: { default: 8 },
     height: { default: 8 },
     depth: { default: 8 },
-    enableInstantInitialization: { default: true },
     enableExternalRendering: { default: true },
-    enablePreview: { default: true },
-    enableInteraction: { default: true },
-    enableWireframe: { default: false },
     enableFrameSkips: { default: true },
+    enableInstantInitialization: { default: true },
+    enableInteraction: { default: true },
+    enablePreview: { default: true },
+    enableWireframe: { default: true },
   },
 
   init: function () {
