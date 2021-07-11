@@ -492,7 +492,7 @@ AFRAME.registerComponent('csdt-container', {
     el.camPos = new THREE.Vector3();
     el.camQuat = new THREE.Quaternion();
     el.containerPos = new THREE.Vector3();
-    el.connectionId = Math.random();
+    el.connectionId = `container-${Math.random()}`;
     el.sceneEl.systems['csdt-container-manager'].containers.push({
       el: el,
       data: data
