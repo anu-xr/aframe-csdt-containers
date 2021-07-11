@@ -1039,8 +1039,8 @@ var define;
         this.connections[id].iframe.remove();
         delete this.connections[id];
       }
-      createMessage(id, text, expectsResponse, sentDataType, responseDataType) {
-        const message = new _MessageDefault.default(text, expectsResponse, sentDataType, responseDataType);
+      createMessage(id, text, sentDataType, responseDataType) {
+        const message = new _MessageDefault.default(text, sentDataType, responseDataType);
         this.messages[id] = message;
       }
     }
@@ -16965,9 +16965,8 @@ var define;
     _parcelHelpers.defineInteropFlag(exports);
     var _helpers = require('./helpers');
     class Message {
-      constructor(text, expectsResponse, sentDataType, responseDataType) {
+      constructor(text, sentDataType, responseDataType) {
         this.text = String(text);
-        this.expectsResponse = Boolean(expectsResponse);
         this.responseText = `${this.text}-response`;
         this.sentDataType = String(sentDataType);
         this.responseDataType = String(responseDataType);
@@ -17100,9 +17099,9 @@ _parcelHelpers.export(exports, "deepRemoveIds", function () {
 });
 var _CSDTDistCSDT = require('../CSDT/dist/CSDT');
 function createCustomMessages() {
-  _CSDTDistCSDT.CSDT.createMessage('pixel', 'container-pixel-data', false, 'uint8array', null);
-  _CSDTDistCSDT.CSDT.createMessage('preview', 'container-preview', true, null, 'uint8array');
-  _CSDTDistCSDT.CSDT.createMessage('render', 'container-render', false, null, null);
+  _CSDTDistCSDT.CSDT.createMessage('pixel', 'container-pixel-data', 'uint8array', null);
+  _CSDTDistCSDT.CSDT.createMessage('preview', 'container-preview', null, 'uint8array');
+  _CSDTDistCSDT.CSDT.createMessage('render', 'container-render', null, null);
 }
 function deepSearchForTypes(obj, types) {
   const found = [];
