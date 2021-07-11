@@ -9,7 +9,6 @@ AFRAME.registerComponent('csdt-container', {
     depth: { default: 8 },
     enableExternalRendering: { default: true },
     enableFrameSkips: { default: true },
-    enableInstantInitialization: { default: true },
     enableInteraction: { default: true },
     enablePreview: { default: true },
     enableWireframe: { default: true },
@@ -49,10 +48,7 @@ AFRAME.registerComponent('csdt-container', {
       el.object3D.add(wireframe);
     }
 
-    //initlize iframe
-    if (data.enableInstantInitialization === true) {
-      this.initializeIframe();
-    }
+    this.initializeIframe();
 
     this.syncCanvasSize = AFRAME.utils.throttle(this.syncCanvasSize, 1000, this);
   },
