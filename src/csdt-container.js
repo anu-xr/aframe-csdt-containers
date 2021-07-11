@@ -11,7 +11,6 @@ AFRAME.registerComponent('csdt-container', {
     enableExternalRendering: { default: true },
     enablePreview: { default: true },
     enableInteraction: { default: true },
-    enableText: { default: false },
     enableWireframe: { default: false },
     enableFrameSkips: { default: true },
   },
@@ -64,16 +63,6 @@ AFRAME.registerComponent('csdt-container', {
       const wireframe = new THREE.LineSegments(geometry2, material2);
 
       el.object3D.add(wireframe);
-    }
-
-    //create text
-    if (data.enableText === true) {
-      const text = document.createElement('a-text');
-      text.setAttribute('value', data.href);
-      text.setAttribute('position', { x: data.width / 2, y: data.height / 2 - 0.15, z: data.depth / 2 });
-      text.setAttribute('rotation', '0 90 0');
-      text.setAttribute('side', 'double');
-      el.appendChild(text);
     }
 
     //initlize iframe
