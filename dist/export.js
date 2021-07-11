@@ -140,9 +140,9 @@
       this[globalName] = mainExports;
     }
   }
-})({"1oOQz":[function(require,module,exports) {
+})({"eHpCr":[function(require,module,exports) {
 var HMR_HOST = null;
-var HMR_PORT = 60152;
+var HMR_PORT = 61633;
 var HMR_SECURE = false;
 var HMR_ENV_HASH = "d751713988987e9331980363e24189ce";
 module.bundle.HMR_BUNDLE_ID = "dcd721b617217ecd3e90b74d2c08edc6";
@@ -483,14 +483,8 @@ AFRAME.registerComponent('csdt-container', {
     enableWireframe: {
       default: false
     },
-    enableDynamicFrameSkips: {
+    enableFrameSkips: {
       default: true
-    },
-    minFrameSkips: {
-      default: 1
-    },
-    maxFrameSkips: {
-      default: 2
     }
   },
   init: function () {
@@ -624,7 +618,9 @@ AFRAME.registerComponent('csdt-container', {
     // change frameSkips based on distance to camera
     if (data.enableDynamicFrameSkips == true) {
       const distance = el.camPos.distanceTo(el.containerPos);
-      el.frameSkips = Math.min(Math.max(Math.floor(distance / (el.containerRadius * 2)), data.minFrameSkips), data.maxFrameSkips);
+      const minFrameSkips = 1;
+      const maxFrameSkips = 2;
+      el.frameSkips = Math.min(Math.max(Math.floor(distance / (el.containerRadius * 2)), minFrameSkips), maxFrameSkips);
     }
     // center child on the container
     el.camPos.sub(el.containerPos);
@@ -17433,6 +17429,6 @@ AFRAME.registerComponent('csdt-container-renderer', {
   },
 });
 
-},{}]},["1oOQz","556pz"], "556pz", "parcelRequireb2de")
+},{}]},["eHpCr","556pz"], "556pz", "parcelRequireb2de")
 
 //# sourceMappingURL=export.js.map

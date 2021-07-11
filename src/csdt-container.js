@@ -13,9 +13,7 @@ AFRAME.registerComponent('csdt-container', {
     enableInteraction: { default: true },
     enableText: { default: false },
     enableWireframe: { default: false },
-    enableDynamicFrameSkips: { default: true },
-    minFrameSkips: { default: 1 },
-    maxFrameSkips: { default: 2 },
+    enableFrameSkips: { default: true },
   },
 
   init: function () {
@@ -177,10 +175,10 @@ AFRAME.registerComponent('csdt-container', {
     if (data.enableDynamicFrameSkips == true) {
       const distance = el.camPos.distanceTo(el.containerPos);
 
-      el.frameSkips = Math.min(
-        Math.max(Math.floor(distance / (el.containerRadius * 2)), data.minFrameSkips),
-        data.maxFrameSkips
-      );
+      const minFrameSkips = 1;
+      const maxFrameSkips = 2;
+
+      el.frameSkips = Math.min(Math.max(Math.floor(distance / (el.containerRadius * 2)), minFrameSkips), maxFrameSkips);
     }
 
     //center child on the container
