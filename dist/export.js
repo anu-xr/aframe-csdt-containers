@@ -140,9 +140,9 @@
       this[globalName] = mainExports;
     }
   }
-})({"6jH1L":[function(require,module,exports) {
+})({"1IC1K":[function(require,module,exports) {
 var HMR_HOST = null;
-var HMR_PORT = 57046;
+var HMR_PORT = 55357;
 var HMR_SECURE = false;
 var HMR_ENV_HASH = "d751713988987e9331980363e24189ce";
 module.bundle.HMR_BUNDLE_ID = "dcd721b617217ecd3e90b74d2c08edc6";
@@ -525,21 +525,22 @@ AFRAME.registerComponent('csdt-container', {
   initializeIframe: function () {
     const el = this.el;
     const data = this.data;
+    const canvas = el.sceneEl.canvas;
     el.conn = _CSDTDistCSDT.CSDT.openConnection(data.href, el.connectionId);
     const ydoc = el.conn.ydoc;
     el.ymap = ydoc.getMap(el.conn.hash);
     el.conn.onResponse(_CSDTDistCSDT.CSDT.messages.open, () => {
       ydoc.transact(() => {
-        el.ymap.set('canvasWidth', 0);
-        el.ymap.set('canvasHeight', 0);
+        el.ymap.set('canvasWidth', canvas.width);
+        el.ymap.set('canvasHeight', canvas.height);
       });
-    }, true);
+    });
     // load a preview
     if (data.enablePreview === true) {
       if (data.enableExternalRendering === false) {
-        el.conn.sendMessageWithResponse(_CSDTDistCSDT.CSDT.messages.preview).then(res => {
+        el.conn.sendMessageWithResponse(_CSDTDistCSDT.CSDT.messages.preview).then(data => {
           const loader = new THREE.ObjectLoader();
-          loader.parse(JSON.parse(String(res.detail)), obj => {
+          loader.parse(JSON.parse(data), obj => {
             obj.position.y -= data.height / 2;
             obj.position.add(el.object3D.getWorldPosition(new THREE.Vector3()));
             el.previewObj = obj;
@@ -548,8 +549,8 @@ AFRAME.registerComponent('csdt-container', {
       }
     }
     // receive pixel data
-    el.conn.onMessage(_CSDTDistCSDT.CSDT.messages.pixel, e => {
-      el.pixels = _CSDTDistCSDT.CSDT.messages.pixel.convertSent(e.detail);
+    el.conn.onMessage(_CSDTDistCSDT.CSDT.messages.pixel, data => {
+      el.pixels = data;
     });
   },
   update: function () {
@@ -1065,8 +1066,7 @@ var define;
         this.ydoc = new _yjs.Doc();
         this.connectionOpened = false;
         // receive ydoc updates
-        this.onMessage(_constants.INTERNAL_MESSAGES.update, e => {
-          const data = _constants.INTERNAL_MESSAGES.update.convertSent(e.detail);
+        this.onMessage(_constants.INTERNAL_MESSAGES.update, data => {
           _yjs.applyUpdate(this.ydoc, data);
         }, false);
         // send ydoc updates
@@ -1096,11 +1096,11 @@ var define;
         });
         this.iframe.contentDocument.dispatchEvent(event);
       }
-      sendMessageWithResponse(message, data) {
+      sendMessageWithResponse(message, data, convert = true) {
         const responseText = message.getResponseTextFromChild(this.hash);
         const promise = new Promise(resolve => {
           document.addEventListener(responseText, e => {
-            const d = message.convertResponse(e.detail);
+            const d = convert === true ? message.convertResponse(e.detail) : e.detail;
             resolve(d);
           }, {
             once: true
@@ -1110,13 +1110,19 @@ var define;
         return promise;
       }
       /*onEvent functions*/
-      onMessage(message, func, once = false) {
-        document.addEventListener(message.getTextFromChild(this.hash), func, {
+      onMessage(message, func, once = false, convert = true) {
+        document.addEventListener(message.getTextFromChild(this.hash), e => {
+          const data = convert === true ? message.convertSent(e.detail) : e.detail;
+          func(data);
+        }, {
           once: once
         });
       }
-      onResponse(message, func, once = false) {
-        document.addEventListener(message.getResponseTextFromChild(this.hash), func, {
+      onResponse(message, func, once = false, convert = true) {
+        document.addEventListener(message.getResponseTextFromChild(this.hash), e => {
+          const data = convert === true ? message.convertSent(e.detail) : e.detail;
+          func(data);
+        }, {
           once: once
         });
       }
@@ -17010,8 +17016,7 @@ var define;
         this.ydoc = new _yjs.Doc();
         this.connectionOpened = false;
         // receive ydoc updates
-        this.onMessage(_constants.INTERNAL_MESSAGES.update, e => {
-          const data = _constants.INTERNAL_MESSAGES.update.convertSent(e.detail);
+        this.onMessage(_constants.INTERNAL_MESSAGES.update, data => {
           _yjs.applyUpdate(this.ydoc, data);
         }, false);
         // send ydoc updates
@@ -17021,7 +17026,7 @@ var define;
         // wait for parent to initialize connection
         const open = _constants.INTERNAL_MESSAGES.open;
         this.onMessage(open, data => {
-          this.hash = open.convertSent(data.detail);
+          this.hash = data;
           this.sendResponse(open);
         });
       }
@@ -17039,11 +17044,11 @@ var define;
         });
         parent.document.dispatchEvent(event);
       }
-      sendMessageWithResponse(message, data) {
+      sendMessageWithResponse(message, data, convert = true) {
         const responseText = message.getResponseTextFromChild(this.hash);
         const promise = new Promise(resolve => {
           document.addEventListener(responseText, e => {
-            const d = message.convertResponse(e.detail);
+            const d = convert === true ? message.convertResponse(e.detail) : e.detail;
             resolve(d);
           }, {
             once: true
@@ -17053,13 +17058,19 @@ var define;
         return promise;
       }
       /*onEvent functions*/
-      onMessage(message, func, once = false) {
-        document.addEventListener(message.getTextFromParent(), func, {
+      onMessage(message, func, once = false, convert = true) {
+        document.addEventListener(message.getTextFromParent(), e => {
+          const data = convert === true ? message.convertSent(e.detail) : e.detail;
+          func(data);
+        }, {
           once: once
         });
       }
-      onResponse(message, func, once = false) {
-        document.addEventListener(message.getResponseTextFromParent(), func, {
+      onResponse(message, func, once = false, convert = true) {
+        document.addEventListener(message.getResponseTextFromParent(), e => {
+          const data = convert === true ? message.convertResponse(e.detail) : e.detail;
+          func(data);
+        }, {
           once: once
         });
       }
@@ -17204,9 +17215,9 @@ AFRAME.registerComponent('csdt-container-receiver', {
       el.sceneEl.renderer.setAnimationLoop(null);
       const ydoc = conn.ydoc;
       const ymap = ydoc.getMap(conn.hash);
-      el.canvasWidth = 0;
-      el.canvasHeight = 0;
-      el.pixels = new Uint8Array(0);
+      el.canvasWidth = ymap.get('canvasWidth') ?? 0;
+      el.canvasHeight = ymap.get('canvasHeight') ?? 0;
+      el.pixels = new Uint8Array(el.canvasWidth * el.canvasHeight * 4);
       el.renderTarget = new THREE.WebGLRenderTarget(el.canvasWidth, el.canvasHeight);
       renderer.setRenderTarget(el.renderTarget);
       ymap.observe(e => {
@@ -17468,6 +17479,6 @@ AFRAME.registerSystem('csdt-container-manager', {
   },
 });
 
-},{}]},["6jH1L","556pz"], "556pz", "parcelRequireb2de")
+},{}]},["1IC1K","556pz"], "556pz", "parcelRequireb2de")
 
 //# sourceMappingURL=export.js.map

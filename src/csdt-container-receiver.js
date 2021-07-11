@@ -29,9 +29,9 @@ AFRAME.registerComponent('csdt-container-receiver', {
       const ydoc = conn.ydoc;
       const ymap = ydoc.getMap(conn.hash);
 
-      el.canvasWidth = 0;
-      el.canvasHeight = 0;
-      el.pixels = new Uint8Array(0);
+      el.canvasWidth = ymap.get('canvasWidth') ?? 0;
+      el.canvasHeight = ymap.get('canvasHeight') ?? 0;
+      el.pixels = new Uint8Array(el.canvasWidth * el.canvasHeight * 4);
 
       el.renderTarget = new THREE.WebGLRenderTarget(el.canvasWidth, el.canvasHeight);
       renderer.setRenderTarget(el.renderTarget);
