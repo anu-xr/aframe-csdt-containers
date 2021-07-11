@@ -61,9 +61,7 @@ AFRAME.registerComponent('csdt-container', {
     const el = this.el;
     const data = this.data;
 
-    CSDT.openConnection(data.href, el.connectionId);
-
-    el.conn = CSDT.connections[el.connectionId];
+    el.conn = CSDT.openConnection(data.href, el.connectionId);
 
     const ydoc = el.conn.ydoc;
     el.ymap = ydoc.getMap(el.conn.hash);
@@ -142,7 +140,7 @@ AFRAME.registerComponent('csdt-container', {
     el.containerPos.y -= data.height / 2;
 
     //change frameSkips based on distance to camera
-    if (data.enableDynamicFrameSkips == true) {
+    if (data.enableFrameSkips == true) {
       const distance = el.camPos.distanceTo(el.containerPos);
 
       const minFrameSkips = 1;
