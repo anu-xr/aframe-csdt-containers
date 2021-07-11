@@ -1,5 +1,5 @@
 import { CSDT } from '../CSDT/dist/CSDT';
-import { customMessages } from './constants';
+import { createCustomMessages } from './utils';
 
 AFRAME.registerComponent('csdt-container-receiver', {
   schema: {
@@ -12,7 +12,8 @@ AFRAME.registerComponent('csdt-container-receiver', {
     const renderer = el.sceneEl.renderer;
 
     const conn = CSDT.connections.parent;
-    customMessages.forEach((msg) => CSDT.createMessage(...msg));
+
+    createCustomMessages();
 
     el.camPos = new THREE.Vector3();
     el.camQuat = new THREE.Quaternion();

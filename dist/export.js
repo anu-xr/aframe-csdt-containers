@@ -448,7 +448,7 @@ require('./csdt-container-manager');
 
 },{"./csdt-container":"PPNTz","./csdt-container-receiver":"6BgQA","./csdt-container-manager":"4ppA8"}],"PPNTz":[function(require,module,exports) {
 var _CSDTDistCSDT = require('../CSDT/dist/CSDT');
-var _constants = require('./constants');
+var _utils = require('./utils');
 AFRAME.registerComponent('csdt-container', {
   schema: {
     href: {
@@ -485,6 +485,7 @@ AFRAME.registerComponent('csdt-container', {
   init: function () {
     const el = this.el;
     const data = this.data;
+    _utils.createCustomMessages();
     el.frames = 0;
     el.frameSkips = 1;
     el.has_iframe_loaded = false;
@@ -524,7 +525,6 @@ AFRAME.registerComponent('csdt-container', {
   initializeIframe: function () {
     const el = this.el;
     const data = this.data;
-    _constants.customMessages.forEach(msg => _CSDTDistCSDT.CSDT.createMessage(...msg));
     _CSDTDistCSDT.CSDT.openConnection(data.href, el.connectionId);
     el.conn = _CSDTDistCSDT.CSDT.connections[el.connectionId];
     const ydoc = el.conn.ydoc;
@@ -603,57 +603,7 @@ AFRAME.registerComponent('csdt-container', {
   }
 });
 
-},{"./constants":"5vBc0","../CSDT/dist/CSDT":"5Ajwx"}],"5vBc0":[function(require,module,exports) {
-var _parcelHelpers = require("@parcel/transformer-js/lib/esmodule-helpers.js");
-_parcelHelpers.defineInteropFlag(exports);
-_parcelHelpers.export(exports, "customMessages", function () {
-  return customMessages;
-});
-const customMessages = [['pixel', 'container-pixel-data', false, 'uint8array', null], ['preview', 'container-preview', true, null, 'uint8array'], ['render', 'container-render', false, null, null]];
-
-},{"@parcel/transformer-js/lib/esmodule-helpers.js":"5gA8y"}],"5gA8y":[function(require,module,exports) {
-"use strict";
-
-exports.interopDefault = function (a) {
-  return a && a.__esModule ? a : {
-    default: a
-  };
-};
-
-exports.defineInteropFlag = function (a) {
-  Object.defineProperty(a, '__esModule', {
-    value: true
-  });
-};
-
-exports.exportAll = function (source, dest) {
-  Object.keys(source).forEach(function (key) {
-    if (key === 'default' || key === '__esModule') {
-      return;
-    } // Skip duplicate re-exports when they have the same value.
-
-
-    if (key in dest && dest[key] === source[key]) {
-      return;
-    }
-
-    Object.defineProperty(dest, key, {
-      enumerable: true,
-      get: function () {
-        return source[key];
-      }
-    });
-  });
-  return dest;
-};
-
-exports.export = function (dest, destName, get) {
-  Object.defineProperty(dest, destName, {
-    enumerable: true,
-    get: get
-  });
-};
-},{}],"5Ajwx":[function(require,module,exports) {
+},{"../CSDT/dist/CSDT":"5Ajwx","./utils":"3EQWo"}],"5Ajwx":[function(require,module,exports) {
 var global = arguments[3];
 var define;
 // modules are defined as an array
@@ -17122,9 +17072,117 @@ var define;
   }]
 }, ["1j9fz", "2pld4"], "2pld4", "parcelRequirecf62");
 
+},{}],"3EQWo":[function(require,module,exports) {
+var _parcelHelpers = require("@parcel/transformer-js/lib/esmodule-helpers.js");
+_parcelHelpers.defineInteropFlag(exports);
+_parcelHelpers.export(exports, "createCustomMessages", function () {
+  return createCustomMessages;
+});
+_parcelHelpers.export(exports, "deepSearchForTypes", function () {
+  return deepSearchForTypes;
+});
+_parcelHelpers.export(exports, "deepRemoveTypes", function () {
+  return deepRemoveTypes;
+});
+_parcelHelpers.export(exports, "deepRemoveIds", function () {
+  return deepRemoveIds;
+});
+var _CSDTDistCSDT = require('../CSDT/dist/CSDT');
+function createCustomMessages() {
+  _CSDTDistCSDT.CSDT.createMessage('pixel', 'container-pixel-data', false, 'uint8array', null);
+  _CSDTDistCSDT.CSDT.createMessage('preview', 'container-preview', true, null, 'uint8array');
+  _CSDTDistCSDT.CSDT.createMessage('render', 'container-render', false, null, null);
+}
+function deepSearchForTypes(obj, types) {
+  const found = [];
+  if (types.includes(obj.type)) found.push(obj);
+  if (obj.children.length > 0) {
+    obj.children.forEach(child => found.push(...deepSearchForTypes(child, types)));
+  }
+  return found;
+}
+function deepRemoveTypes(obj, types, includeObj = false) {
+  const removed = [];
+  if (includeObj == true) {
+    if (types.includes(obj.type)) {
+      removed.push(obj);
+      return [undefined, removed];
+    }
+  }
+  if (obj.children.length > 0) {
+    obj.children.forEach(child => {
+      const [cObj, cRemoved] = deepRemoveTypes(child, types, true);
+      removed.push(...cRemoved);
+      if (!cObj) obj.remove(child);
+    });
+  }
+  return [obj, removed];
+}
+function deepRemoveIds(obj, ids, includeObj = false) {
+  const removed = [];
+  if (includeObj == true) {
+    if (obj.el) {
+      if (ids.includes(obj.el.id)) {
+        removed.push(obj);
+        return [undefined, removed];
+      }
+    }
+  }
+  if (obj.children.length > 0) {
+    obj.children.forEach(child => {
+      const [cObj, cRemoved] = deepRemoveIds(child, ids, true);
+      removed.push(...cRemoved);
+      if (!cObj) obj.remove(child);
+    });
+  }
+  return [obj, removed];
+}
+
+},{"../CSDT/dist/CSDT":"5Ajwx","@parcel/transformer-js/lib/esmodule-helpers.js":"5gA8y"}],"5gA8y":[function(require,module,exports) {
+"use strict";
+
+exports.interopDefault = function (a) {
+  return a && a.__esModule ? a : {
+    default: a
+  };
+};
+
+exports.defineInteropFlag = function (a) {
+  Object.defineProperty(a, '__esModule', {
+    value: true
+  });
+};
+
+exports.exportAll = function (source, dest) {
+  Object.keys(source).forEach(function (key) {
+    if (key === 'default' || key === '__esModule') {
+      return;
+    } // Skip duplicate re-exports when they have the same value.
+
+
+    if (key in dest && dest[key] === source[key]) {
+      return;
+    }
+
+    Object.defineProperty(dest, key, {
+      enumerable: true,
+      get: function () {
+        return source[key];
+      }
+    });
+  });
+  return dest;
+};
+
+exports.export = function (dest, destName, get) {
+  Object.defineProperty(dest, destName, {
+    enumerable: true,
+    get: get
+  });
+};
 },{}],"6BgQA":[function(require,module,exports) {
 var _CSDTDistCSDT = require('../CSDT/dist/CSDT');
-var _constants = require('./constants');
+var _utils = require('./utils');
 AFRAME.registerComponent('csdt-container-receiver', {
   schema: {
     player: {
@@ -17136,7 +17194,7 @@ AFRAME.registerComponent('csdt-container-receiver', {
     const data = this.data;
     const renderer = el.sceneEl.renderer;
     const conn = _CSDTDistCSDT.CSDT.connections.parent;
-    _constants.customMessages.forEach(msg => _CSDTDistCSDT.CSDT.createMessage(...msg));
+    _utils.createCustomMessages();
     el.camPos = new THREE.Vector3();
     el.camQuat = new THREE.Quaternion();
     if (document.querySelector(data.player)) el.player = document.querySelector(data.player).object3D; else el.player = el.sceneEl.camera.el.object3D;
@@ -17213,7 +17271,7 @@ AFRAME.registerComponent('csdt-container-receiver', {
   }
 });
 
-},{"./constants":"5vBc0","../CSDT/dist/CSDT":"5Ajwx"}],"4ppA8":[function(require,module,exports) {
+},{"../CSDT/dist/CSDT":"5Ajwx","./utils":"3EQWo"}],"4ppA8":[function(require,module,exports) {
 AFRAME.registerSystem('csdt-container-manager', {
   init: function () {
     const el = this.el;

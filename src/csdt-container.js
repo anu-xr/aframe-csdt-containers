@@ -1,5 +1,5 @@
 import { CSDT } from '../CSDT/dist/CSDT';
-import { customMessages } from './constants';
+import { createCustomMessages } from './utils';
 
 AFRAME.registerComponent('csdt-container', {
   schema: {
@@ -18,6 +18,8 @@ AFRAME.registerComponent('csdt-container', {
   init: function () {
     const el = this.el;
     const data = this.data;
+
+    createCustomMessages();
 
     el.frames = 0;
     el.frameSkips = 1;
@@ -58,8 +60,6 @@ AFRAME.registerComponent('csdt-container', {
   initializeIframe: function () {
     const el = this.el;
     const data = this.data;
-
-    customMessages.forEach((msg) => CSDT.createMessage(...msg));
 
     CSDT.openConnection(data.href, el.connectionId);
 

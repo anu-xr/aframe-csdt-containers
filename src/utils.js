@@ -1,3 +1,11 @@
+import { CSDT } from '../CSDT/dist/CSDT';
+
+export function createCustomMessages() {
+  CSDT.createMessage('pixel', 'container-pixel-data', false, 'uint8array', null);
+  CSDT.createMessage('preview', 'container-preview', true, null, 'uint8array');
+  CSDT.createMessage('render', 'container-render', false, null, null);
+}
+
 //obj: three object
 //types: array of type names (ie. ["AmbientLight", "DirectionalLight"])
 export function deepSearchForTypes(obj, types) {
