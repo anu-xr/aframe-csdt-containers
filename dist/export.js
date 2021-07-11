@@ -525,8 +525,7 @@ AFRAME.registerComponent('csdt-container', {
   initializeIframe: function () {
     const el = this.el;
     const data = this.data;
-    _CSDTDistCSDT.CSDT.openConnection(data.href, el.connectionId);
-    el.conn = _CSDTDistCSDT.CSDT.connections[el.connectionId];
+    el.conn = _CSDTDistCSDT.CSDT.openConnection(data.href, el.connectionId);
     const ydoc = el.conn.ydoc;
     el.ymap = ydoc.getMap(el.conn.hash);
     el.conn.onResponse(_CSDTDistCSDT.CSDT.messages.open, () => {
@@ -585,7 +584,7 @@ AFRAME.registerComponent('csdt-container', {
     el.containerPos = el.object3D.getWorldPosition(el.containerPos);
     el.containerPos.y -= data.height / 2;
     // change frameSkips based on distance to camera
-    if (data.enableDynamicFrameSkips == true) {
+    if (data.enableFrameSkips == true) {
       const distance = el.camPos.distanceTo(el.containerPos);
       const minFrameSkips = 1;
       const maxFrameSkips = 2;
@@ -1033,6 +1032,7 @@ var define;
         const connection = new _ConnectionDefault.default(url);
         if (this.connections[id]) this.closeConnection(id);
         this.connections[id] = connection;
+        return connection;
       }
       closeConnection(id) {
         this.connections[id].iframe.remove();
