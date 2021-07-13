@@ -140,9 +140,9 @@
       this[globalName] = mainExports;
     }
   }
-})({"1IC1K":[function(require,module,exports) {
+})({"4C2O3":[function(require,module,exports) {
 var HMR_HOST = null;
-var HMR_PORT = 55357;
+var HMR_PORT = 61523;
 var HMR_SECURE = false;
 var HMR_ENV_HASH = "d751713988987e9331980363e24189ce";
 module.bundle.HMR_BUNDLE_ID = "dcd721b617217ecd3e90b74d2c08edc6";
@@ -16947,8 +16947,8 @@ var define;
     var _Message = require('./Message');
     var _MessageDefault = _parcelHelpers.interopDefault(_Message);
     const INTERNAL_MESSAGES = {
-      open: new _MessageDefault.default('open-connection', false, 'string', null),
-      update: new _MessageDefault.default('ydoc-update', false, 'uint8array', null)
+      open: new _MessageDefault.default('open-connection', 'string', null),
+      update: new _MessageDefault.default('ydoc-update', 'uint8array', null)
     };
   }, {
     "./Message": "7sBfv",
@@ -17362,6 +17362,10 @@ AFRAME.registerSystem('csdt-container-manager', {
     });
   },
 
+  tick: function () {
+    this.el.sceneEl.renderer.clear(true, true, true);
+  },
+
   tock: function () {
     const el = this.el;
     const canvas = el.sceneEl.canvas;
@@ -17472,6 +17476,6 @@ AFRAME.registerSystem('csdt-container-manager', {
   },
 });
 
-},{}]},["1IC1K","556pz"], "556pz", "parcelRequireb2de")
+},{}]},["4C2O3","556pz"], "556pz", "parcelRequireb2de")
 
 //# sourceMappingURL=export.js.map

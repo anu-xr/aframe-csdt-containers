@@ -84,6 +84,10 @@ AFRAME.registerSystem('csdt-container-manager', {
     });
   },
 
+  tick: function () {
+    this.el.sceneEl.renderer.clear(true, true, true);
+  },
+
   tock: function () {
     const el = this.el;
     const canvas = el.sceneEl.canvas;
