@@ -56,40 +56,41 @@ AFRAME.registerComponent('csdt-container', {
   initializeIframe: function () {
     const el = this.el;
     const data = this.data;
-    const canvas = el.sceneEl.canvas;
 
     el.conn = CSDT.openConnection(data.href, el.connectionId);
 
-    const ydoc = el.conn.ydoc;
-    el.ymap = ydoc.getMap(el.conn.hash);
+    el.conn.onResponse(
+      CSDT.messages.open,
+      () => {
+        //not entirely sure why this setTimeout is needed, this is a scuffed fix but it works
+        setTimeout(() => {
+          const ydoc = el.conn.ydoc;
+          el.ymap = ydoc.getMap(el.conn.hash);
 
-    el.conn.onResponse(CSDT.messages.open, () => {
-      ydoc.transact(() => {
-        el.ymap.set('canvasWidth', canvas.width);
-        el.ymap.set('canvasHeight', canvas.height);
-      });
-    });
+          //load a preview
+          if (data.enablePreview === true) {
+            if (data.enableExternalRendering === false) {
+              el.conn.sendMessageWithResponse(CSDT.messages.preview).then((data) => {
+                const loader = new THREE.ObjectLoader();
 
-    //load a preview
-    if (data.enablePreview === true) {
-      if (data.enableExternalRendering === false) {
-        el.conn.sendMessageWithResponse(CSDT.messages.preview).then((data) => {
-          const loader = new THREE.ObjectLoader();
+                loader.parse(JSON.parse(data), (obj) => {
+                  obj.position.y -= data.height / 2;
+                  obj.position.add(el.object3D.getWorldPosition(new THREE.Vector3()));
 
-          loader.parse(JSON.parse(data), (obj) => {
-            obj.position.y -= data.height / 2;
-            obj.position.add(el.object3D.getWorldPosition(new THREE.Vector3()));
+                  el.previewObj = obj;
+                });
+              });
+            }
+          }
 
-            el.previewObj = obj;
+          //receive pixel data
+          el.conn.onMessage(CSDT.messages.pixel, (data) => {
+            el.pixels = data;
           });
-        });
-      }
-    }
-
-    //receive pixel data
-    el.conn.onMessage(CSDT.messages.pixel, (data) => {
-      el.pixels = data;
-    });
+        }, 0);
+      },
+      true
+    );
   },
 
   update: function () {
@@ -122,6 +123,8 @@ AFRAME.registerComponent('csdt-container', {
     const camera = el.sceneEl.camera;
     const ydoc = el.conn.ydoc;
     const ymap = el.ymap;
+
+    if (!ymap) return;
 
     //sync canvas size
     this.syncCanvasSize();

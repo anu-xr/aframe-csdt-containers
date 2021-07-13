@@ -75,7 +75,7 @@ AFRAME.registerSystem('csdt-container-manager', {
 
             if (isInContainer === true) {
               //send input to child site
-              obj.el.conn.iframe.dispatchEvent(`${event}-${name}`);
+              obj.el.conn?.iframe.dispatchEvent(`${event}-${name}`);
             }
           });
         },
@@ -133,6 +133,7 @@ AFRAME.registerSystem('csdt-container-manager', {
     containers.forEach((obj) => {
       if (!obj.el) return;
       if (el.frustum.intersectsObject(obj.el.containerMesh) === false) return;
+      if (obj.el.conn?.connectionOpened !== true) return;
 
       if (obj.data.enableExternalRendering === false) {
         const isInContainer = this.isCameraInMesh(camera, obj.el.containerMesh);
@@ -147,8 +148,6 @@ AFRAME.registerSystem('csdt-container-manager', {
 
         if (!obj.el.iframe) obj.el.initializeIframe();
       }
-
-      if (obj.el.conn.connectionOpened !== true) return;
 
       if (++obj.el.frames % obj.el.frameSkips === 0) {
         obj.el.components['csdt-container'].syncData();

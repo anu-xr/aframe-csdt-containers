@@ -140,9 +140,9 @@
       this[globalName] = mainExports;
     }
   }
-})({"4C2O3":[function(require,module,exports) {
+})({"PnNJz":[function(require,module,exports) {
 var HMR_HOST = null;
-var HMR_PORT = 61523;
+var HMR_PORT = 51284;
 var HMR_SECURE = false;
 var HMR_ENV_HASH = "d751713988987e9331980363e24189ce";
 module.bundle.HMR_BUNDLE_ID = "dcd721b617217ecd3e90b74d2c08edc6";
@@ -519,33 +519,31 @@ AFRAME.registerComponent('csdt-container', {
   initializeIframe: function () {
     const el = this.el;
     const data = this.data;
-    const canvas = el.sceneEl.canvas;
     el.conn = _CSDTDistCSDT.CSDT.openConnection(data.href, el.connectionId);
-    const ydoc = el.conn.ydoc;
-    el.ymap = ydoc.getMap(el.conn.hash);
     el.conn.onResponse(_CSDTDistCSDT.CSDT.messages.open, () => {
-      ydoc.transact(() => {
-        el.ymap.set('canvasWidth', canvas.width);
-        el.ymap.set('canvasHeight', canvas.height);
-      });
-    });
-    // load a preview
-    if (data.enablePreview === true) {
-      if (data.enableExternalRendering === false) {
-        el.conn.sendMessageWithResponse(_CSDTDistCSDT.CSDT.messages.preview).then(data => {
-          const loader = new THREE.ObjectLoader();
-          loader.parse(JSON.parse(data), obj => {
-            obj.position.y -= data.height / 2;
-            obj.position.add(el.object3D.getWorldPosition(new THREE.Vector3()));
-            el.previewObj = obj;
-          });
+      // not entirely sure why this setTimeout is needed, this is a scuffed fix but it works
+      setTimeout(() => {
+        const ydoc = el.conn.ydoc;
+        el.ymap = ydoc.getMap(el.conn.hash);
+        // load a preview
+        if (data.enablePreview === true) {
+          if (data.enableExternalRendering === false) {
+            el.conn.sendMessageWithResponse(_CSDTDistCSDT.CSDT.messages.preview).then(data => {
+              const loader = new THREE.ObjectLoader();
+              loader.parse(JSON.parse(data), obj => {
+                obj.position.y -= data.height / 2;
+                obj.position.add(el.object3D.getWorldPosition(new THREE.Vector3()));
+                el.previewObj = obj;
+              });
+            });
+          }
+        }
+        // receive pixel data
+        el.conn.onMessage(_CSDTDistCSDT.CSDT.messages.pixel, data => {
+          el.pixels = data;
         });
-      }
-    }
-    // receive pixel data
-    el.conn.onMessage(_CSDTDistCSDT.CSDT.messages.pixel, data => {
-      el.pixels = data;
-    });
+      }, 0);
+    }, true);
   },
   update: function () {
     const el = this.el;
@@ -571,6 +569,7 @@ AFRAME.registerComponent('csdt-container', {
     const camera = el.sceneEl.camera;
     const ydoc = el.conn.ydoc;
     const ymap = el.ymap;
+    if (!ymap) return;
     // sync canvas size
     this.syncCanvasSize();
     // sync camera position
@@ -1024,8 +1023,8 @@ var define;
         };
       }
       openConnection(url, id) {
-        const connection = new _ConnectionDefault.default(url);
         if (this.connections[id]) this.closeConnection(id);
+        const connection = new _ConnectionDefault.default(url);
         this.connections[id] = connection;
         return connection;
       }
@@ -17353,7 +17352,7 @@ AFRAME.registerSystem('csdt-container-manager', {
 
             if (isInContainer === true) {
               //send input to child site
-              obj.el.conn.iframe.dispatchEvent(`${event}-${name}`);
+              obj.el.conn?.iframe.dispatchEvent(`${event}-${name}`);
             }
           });
         },
@@ -17411,6 +17410,7 @@ AFRAME.registerSystem('csdt-container-manager', {
     containers.forEach((obj) => {
       if (!obj.el) return;
       if (el.frustum.intersectsObject(obj.el.containerMesh) === false) return;
+      if (obj.el.conn?.connectionOpened !== true) return;
 
       if (obj.data.enableExternalRendering === false) {
         const isInContainer = this.isCameraInMesh(camera, obj.el.containerMesh);
@@ -17425,8 +17425,6 @@ AFRAME.registerSystem('csdt-container-manager', {
 
         if (!obj.el.iframe) obj.el.initializeIframe();
       }
-
-      if (obj.el.conn.connectionOpened !== true) return;
 
       if (++obj.el.frames % obj.el.frameSkips === 0) {
         obj.el.components['csdt-container'].syncData();
@@ -17476,6 +17474,6 @@ AFRAME.registerSystem('csdt-container-manager', {
   },
 });
 
-},{}]},["4C2O3","556pz"], "556pz", "parcelRequireb2de")
+},{}]},["PnNJz","556pz"], "556pz", "parcelRequireb2de")
 
 //# sourceMappingURL=export.js.map
