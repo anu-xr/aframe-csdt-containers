@@ -21,72 +21,76 @@ AFRAME.registerComponent('csdt-container-receiver', {
     if (document.querySelector(data.player)) el.player = document.querySelector(data.player).object3D;
     else el.player = el.sceneEl.camera.el.object3D;
 
-    conn.onMessage(CSDT.messages.open, () => {
-      //disable aframe's render loop
-      //we sync our render with the parent site, rather than using a separate clock
-      el.sceneEl.renderer.setAnimationLoop(null);
+    conn.onMessage(
+      CSDT.messages.open,
+      () => {
+        //disable aframe's render loop
+        //we sync our render with the parent site, rather than using a separate clock
+        el.sceneEl.renderer.setAnimationLoop(null);
 
-      const ydoc = conn.ydoc;
-      const ymap = ydoc.getMap(conn.hash);
+        const ydoc = conn.ydoc;
+        const ymap = ydoc.getMap(conn.hash);
 
-      el.canvasWidth = ymap.get('canvasWidth') ?? 0;
-      el.canvasHeight = ymap.get('canvasHeight') ?? 0;
-      el.pixels = new Uint8Array(el.canvasWidth * el.canvasHeight * 4);
+        el.canvasWidth = ymap.get('canvasWidth') ?? 0;
+        el.canvasHeight = ymap.get('canvasHeight') ?? 0;
+        el.pixels = new Uint8Array(el.canvasWidth * el.canvasHeight * 4);
 
-      el.renderTarget = new THREE.WebGLRenderTarget(el.canvasWidth, el.canvasHeight);
-      renderer.setRenderTarget(el.renderTarget);
+        el.renderTarget = new THREE.WebGLRenderTarget(el.canvasWidth, el.canvasHeight);
+        renderer.setRenderTarget(el.renderTarget);
 
-      ymap.observe((e) => {
-        const changed = e.transaction.changed;
-        //update things based on ymap data changes
-        changed.forEach((c) => {
-          if (c.has('canvasWidth') || c.has('canvasHeight')) {
-            el.canvasWidth = ymap.get('canvasWidth');
-            el.canvasHeight = ymap.get('canvasHeight');
+        ymap.observe((e) => {
+          const changed = e.transaction.changed;
+          //update things based on ymap data changes
+          changed.forEach((c) => {
+            if (c.has('canvasWidth') || c.has('canvasHeight')) {
+              el.canvasWidth = ymap.get('canvasWidth');
+              el.canvasHeight = ymap.get('canvasHeight');
 
-            el.renderTarget.setSize(el.canvasWidth, el.canvasHeight);
-            el.pixels = new Uint8Array(el.canvasWidth * el.canvasHeight * 4);
+              el.renderTarget.setSize(el.canvasWidth, el.canvasHeight);
+              el.pixels = new Uint8Array(el.canvasWidth * el.canvasHeight * 4);
 
-            const camera = el.sceneEl.camera;
-            camera.aspect = el.canvasWidth / el.canvasHeight;
-            camera.updateProjectionMatrix();
-          }
+              const camera = el.sceneEl.camera;
+              camera.aspect = el.canvasWidth / el.canvasHeight;
+              camera.updateProjectionMatrix();
+            }
 
-          if (c.has('cameraPosition')) el.camPos.fromArray(ymap.get('cameraPosition'));
-          if (c.has('cameraQuaternion')) el.camQuat.fromArray(ymap.get('cameraQuaternion'));
+            if (c.has('cameraPosition')) el.camPos.fromArray(ymap.get('cameraPosition'));
+            if (c.has('cameraQuaternion')) el.camQuat.fromArray(ymap.get('cameraQuaternion'));
+          });
         });
-      });
 
-      //when the parent site requests a render
-      conn.onMessage(CSDT.messages.render, () => {
-        const el = this.el;
-        const sceneEl = el.sceneEl;
-        const renderer = sceneEl.renderer;
-        const camera = sceneEl.camera;
+        //when the parent site requests a render
+        conn.onMessage(CSDT.messages.render, () => {
+          const el = this.el;
+          const sceneEl = el.sceneEl;
+          const renderer = sceneEl.renderer;
+          const camera = sceneEl.camera;
 
-        const pos = el.camPos;
-        const quat = el.camQuat;
-        const player = el.player;
+          const pos = el.camPos;
+          const quat = el.camQuat;
+          const player = el.player;
 
-        player.position.set(pos.x, pos.y, pos.z);
-        camera.quaternion.set(quat.x, quat.y, quat.z, quat.w);
+          player.position.set(pos.x, pos.y, pos.z);
+          camera.quaternion.set(quat.x, quat.y, quat.z, quat.w);
 
-        this.renderScene();
+          this.renderScene();
 
-        //get pixel data
-        renderer.readRenderTargetPixels(el.renderTarget, 0, 0, el.canvasWidth, el.canvasHeight, el.pixels);
+          //get pixel data
+          renderer.readRenderTargetPixels(el.renderTarget, 0, 0, el.canvasWidth, el.canvasHeight, el.pixels);
 
-        //send pixel data to parent
-        //use an event rather than yjs to transfer data for performance reasons, el.pixels is very large
-        conn.sendMessage(CSDT.messages.pixel, el.pixels);
-      });
+          //send pixel data to parent
+          //use an event rather than yjs to transfer data for performance reasons, el.pixels is very large
+          conn.sendMessage(CSDT.messages.pixel, el.pixels);
+        });
 
-      //when the parent requests a preview
-      conn.onMessage(CSDT.messages.preview, () => {
-        const scene = el.sceneEl.object3D;
-        conn.sendResponse(CSDT.messages.preview, JSON.stringify(scene.toJSON()));
-      });
-    });
+        //when the parent requests a preview
+        conn.onMessage(CSDT.messages.preview, () => {
+          const scene = el.sceneEl.object3D;
+          conn.sendResponse(CSDT.messages.preview, JSON.stringify(scene.toJSON()));
+        });
+      },
+      true
+    );
   },
 
   //modified from https://github.com/aframevr/aframe/blob/b164623dfa0d2548158f4b7da06157497cd4ea29/src/core/scene/a-scene.js#L782

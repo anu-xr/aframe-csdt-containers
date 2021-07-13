@@ -17253,7 +17253,7 @@ AFRAME.registerComponent('csdt-container-receiver', {
         const scene = el.sceneEl.object3D;
         conn.sendResponse(_CSDTDistCSDT.CSDT.messages.preview, JSON.stringify(scene.toJSON()));
       });
-    });
+    }, true);
   },
   // modified from https://github.com/aframevr/aframe/blob/b164623dfa0d2548158f4b7da06157497cd4ea29/src/core/scene/a-scene.js#L782
   renderScene: function () {
