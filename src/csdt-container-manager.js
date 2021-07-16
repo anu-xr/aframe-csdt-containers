@@ -21,35 +21,12 @@ AFRAME.registerSystem('csdt-container-manager', {
 
     el.frustum = new THREE.Frustum();
     el.frustumMatrix = new THREE.Matrix4();
-
-    const handNames = ['left', 'right'];
-    const hands = handNames.map((name) => {
-      //listen to user input
-      const hand = document.createElement('a-entity');
-      hand.setAttribute('hand-controls', { hand: name });
-      el.appendChild(hand);
-
-      //pass user input to child sites
-      this.handleInputEvent(hand, 'gripdown', name);
-      this.handleInputEvent(hand, 'gripup', name);
-      this.handleInputEvent(hand, 'pointup', name);
-      this.handleInputEvent(hand, 'pointdown', name);
-      this.handleInputEvent(hand, 'thumbup', name);
-      this.handleInputEvent(hand, 'thumbdown', name);
-      this.handleInputEvent(hand, 'pointingstart', name);
-      this.handleInputEvent(hand, 'pointingend', name);
-      this.handleInputEvent(hand, 'pistolstart', name);
-      this.handleInputEvent(hand, 'pistolend', name);
-
-      return hand;
-    });
-
-    el.handL = hands[0];
-    el.handR = hands[1];
   },
 
-  isCameraInMesh: function (camera, mesh) {
+  isInContainer: function (containerObj) {
     const el = this.el;
+    const camera = el.sceneEl.camera;
+    const mesh = containerObj.el.containerMesh;
 
     el.raycaster.setFromCamera(el.raycastCoords, camera);
     const intersects = el.raycaster.intersectObject(mesh);
@@ -58,29 +35,31 @@ AFRAME.registerSystem('csdt-container-manager', {
     return false;
   },
 
-  handleInputEvent: function (source, event, name) {
-    const el = this.el;
+  handleInputEvent: function (e, target) {
     const containers = this.containers;
-    const camera = el.sceneEl.camera;
 
-    source.addEventListener(event, () => {
-      //after an input, run this code on the next tock
-      el.addEventListener(
-        'tock',
-        () => {
-          //see if the user is inside a container
-          containers.forEach((obj) => {
-            const mesh = obj.el.containerMesh;
-            const isInContainer = this.isCameraInMesh(camera, mesh);
+    containers.forEach((obj) => {
+      const iframe = obj.el.conn?.iframe;
+      if (!frame) return;
 
-            if (isInContainer === true) {
-              //send input to child site
-              obj.el.conn?.iframe.dispatchEvent(`${event}-${name}`);
-            }
-          });
-        },
-        { once: true }
-      );
+      const isInContainer = this.isInContainer(obj);
+      if (isInContainer !== true) return;
+
+      //send input to child site
+      switch (target) {
+        case 'document':
+          iframe.contentDocument.dispatchEvent(e);
+          break;
+        case 'canvas':
+          const hash = obj.el.conn.hash;
+          const reciever = iframe.contentDocument.getElementsByClassName(hash)[0];
+          reciever.el.sceneEl.canvas.dispatchEvent(e);
+          break;
+        case 'leftHand':
+          break;
+        case 'rightHand':
+          break;
+      }
     });
   },
 
@@ -89,6 +68,9 @@ AFRAME.registerSystem('csdt-container-manager', {
   },
 
   tock: function () {
+    const containers = this.containers;
+    if (containers.length === 0) return;
+
     const el = this.el;
     const canvas = el.sceneEl.canvas;
     const width = canvas.width;
@@ -96,16 +78,9 @@ AFRAME.registerSystem('csdt-container-manager', {
     const camera = el.sceneEl.camera;
     const renderer = el.sceneEl.renderer;
     const gl = renderer.getContext();
-    const containers = this.containers;
     renderer.autoClear = false;
 
-    if (!containers) return;
-
     el.emit('tock');
-
-    //keep hand-controls invisible
-    el.handL.object3D.traverseVisible((obj) => (obj.visible = false));
-    el.handR.object3D.traverseVisible((obj) => (obj.visible = false));
 
     if (el.renderingPlane.geometry.width !== width || el.renderingPlane.geometry.height !== height) {
       el.renderingPlane.geometry.dispose();
@@ -136,7 +111,7 @@ AFRAME.registerSystem('csdt-container-manager', {
       if (obj.el.conn?.connectionOpened !== true) return;
 
       if (obj.data.enableExternalRendering === false) {
-        const isInContainer = this.isCameraInMesh(camera, obj.el.containerMesh);
+        const isInContainer = this.isInContainer(obj);
 
         if (isInContainer === false) {
           if (!obj.el.previewObj) return;
