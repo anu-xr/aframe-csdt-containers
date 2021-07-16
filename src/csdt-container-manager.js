@@ -40,7 +40,7 @@ AFRAME.registerSystem('csdt-container-manager', {
 
     containers.forEach((obj) => {
       const iframe = obj.el.conn?.iframe;
-      if (!frame) return;
+      if (!iframe) return;
 
       const isInContainer = this.isInContainer(obj);
       if (isInContainer !== true) return;
@@ -53,11 +53,25 @@ AFRAME.registerSystem('csdt-container-manager', {
         case 'canvas':
           const hash = obj.el.conn.hash;
           const reciever = iframe.contentDocument.getElementsByClassName(hash)[0];
-          reciever.el.sceneEl.canvas.dispatchEvent(e);
+          reciever.sceneEl.canvas.dispatchEvent(e);
           break;
         case 'leftHand':
+          {
+            const player = iframe.contentDocument.querySelector('a-player');
+            if (!player) break;
+            const hand = player.components['grabbing']?._left.hand;
+            if (!hand) break;
+            hand.dispatchEvent(e);
+          }
           break;
         case 'rightHand':
+          {
+            const player = iframe.contentDocument.querySelector('a-player');
+            if (!player) break;
+            const hand = player.components['grabbing']?._right.hand;
+            if (!hand) break;
+            hand.dispatchEvent(e);
+          }
           break;
       }
     });
