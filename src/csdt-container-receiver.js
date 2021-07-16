@@ -79,9 +79,15 @@ AFRAME.registerComponent('csdt-container-receiver', {
 
           const pos = el.camPos;
           const quat = el.camQuat;
-          const player = el.isInContainer === true ? el.player : el.secondCam;
 
-          player.position.set(pos.x, pos.y, pos.z);
+          if (el.isInContainer === true) {
+            const player = el.player;
+            player.position.set(pos.x, player.position.y, pos.z);
+          } else {
+            const player = el.secondCam;
+            player.position.set(pos.x, pos.y, pos.z);
+          }
+
           camera.quaternion.set(quat.x, quat.y, quat.z, quat.w);
 
           this.renderScene();
