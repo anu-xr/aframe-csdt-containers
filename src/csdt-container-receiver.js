@@ -18,7 +18,10 @@ AFRAME.registerComponent('csdt-container-receiver', {
     el.isInContainer = false;
     el.camPos = new THREE.Vector3();
     el.camQuat = new THREE.Quaternion();
-    el.secondCam = el.sceneEl.camera.clone();
+
+    el.sceneEl.addEventListener('loaded', () => {
+      el.secondCam = el.sceneEl.camera.clone();
+    });
 
     if (document.querySelector(data.player)) el.player = document.querySelector(data.player).object3D;
     else el.player = el.sceneEl.camera.el.object3D;
