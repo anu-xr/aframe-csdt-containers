@@ -3,20 +3,22 @@ import { createCustomMessages } from './utils';
 
 AFRAME.registerComponent('csdt-container-receiver', {
   schema: {
-    player: { default: '#player' },
+    player: { default: '' },
   },
 
   init: function () {
     const el = this.el;
     const data = this.data;
-    const renderer = el.sceneEl.renderer;
 
+    const renderer = el.sceneEl.renderer;
     const conn = CSDT.connections.parent;
 
     createCustomMessages();
 
+    el.isInContainer = false;
     el.camPos = new THREE.Vector3();
     el.camQuat = new THREE.Quaternion();
+    el.secondCam = el.sceneEl.camera.clone();
 
     if (document.querySelector(data.player)) el.player = document.querySelector(data.player).object3D;
     else el.player = el.sceneEl.camera.el.object3D;
@@ -24,6 +26,8 @@ AFRAME.registerComponent('csdt-container-receiver', {
     conn.onMessage(
       CSDT.messages.open,
       () => {
+        el.classList.add(conn.hash);
+
         //disable aframe's render loop
         //we sync our render with the parent site, rather than using a separate clock
         el.sceneEl.renderer.setAnimationLoop(null);
@@ -49,13 +53,17 @@ AFRAME.registerComponent('csdt-container-receiver', {
               el.renderTarget.setSize(el.canvasWidth, el.canvasHeight);
               el.pixels = new Uint8Array(el.canvasWidth * el.canvasHeight * 4);
 
-              const camera = el.sceneEl.camera;
-              camera.aspect = el.canvasWidth / el.canvasHeight;
-              camera.updateProjectionMatrix();
+              const cameras = [el.sceneEl.camera, el.secondCam];
+              cameras.forEach((camera) => {
+                camera.aspect = el.canvasWidth / el.canvasHeight;
+                camera.updateProjectionMatrix();
+              });
             }
 
             if (c.has('cameraPosition')) el.camPos.fromArray(ymap.get('cameraPosition'));
             if (c.has('cameraQuaternion')) el.camQuat.fromArray(ymap.get('cameraQuaternion'));
+
+            if (c.has('isInContainer')) el.isInContainer = ymap.get('isInContainer');
           });
         });
 
@@ -64,11 +72,11 @@ AFRAME.registerComponent('csdt-container-receiver', {
           const el = this.el;
           const sceneEl = el.sceneEl;
           const renderer = sceneEl.renderer;
-          const camera = sceneEl.camera;
+          const camera = el.isInContainer === true ? sceneEl.camera : el.secondCam;
 
           const pos = el.camPos;
           const quat = el.camQuat;
-          const player = el.player;
+          const player = el.isInContainer === true ? el.player : el.secondCam;
 
           player.position.set(pos.x, pos.y, pos.z);
           camera.quaternion.set(quat.x, quat.y, quat.z, quat.w);
@@ -98,6 +106,7 @@ AFRAME.registerComponent('csdt-container-receiver', {
     const el = this.el;
     const sceneEl = el.sceneEl;
     const renderer = sceneEl.renderer;
+    const camera = el.isInContainer === true ? sceneEl.camera : el.secondCam;
 
     const delta = sceneEl.clock.getDelta() * 1000;
     const time = sceneEl.clock.elapsedTime * 1000;
@@ -112,7 +121,7 @@ AFRAME.registerComponent('csdt-container-receiver', {
       sceneEl.object3D.background = null;
     }
 
-    renderer.render(sceneEl.object3D, sceneEl.camera);
+    renderer.render(sceneEl.object3D, camera);
 
     if (savedBackground) sceneEl.object3D.background = savedBackground;
   },

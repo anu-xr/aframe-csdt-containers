@@ -146,10 +146,15 @@ AFRAME.registerComponent('csdt-container', {
       el.frameSkips = Math.min(Math.max(Math.floor(distance / (el.containerRadius * 2)), minFrameSkips), maxFrameSkips);
     }
 
+    const isInContainer = el.sceneEl.systems['csdt-container-manager'].isInContainer({ el });
+    if (ymap.get('isInContainer') !== isInContainer) {
+      ymap.set('isInContainer', isInContainer);
+    }
+
     //center child on the container
     el.camPos.sub(el.containerPos);
 
-    //send info to child site
+    //send camera position to child site
     ydoc.transact(() => {
       ymap.set('cameraPosition', el.camPos.toArray());
       ymap.set('cameraQuaternion', el.camQuat.toArray());
