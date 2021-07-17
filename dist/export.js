@@ -17349,6 +17349,7 @@ AFRAME.registerSystem('csdt-container-manager', {
         case 'canvas':
           const hash = obj.el.conn.hash;
           const reciever = iframe.contentDocument.getElementsByClassName(hash)[0];
+          if (!reciever) return;
           reciever.sceneEl.canvas.dispatchEvent(e);
           break;
         case 'leftHand':
