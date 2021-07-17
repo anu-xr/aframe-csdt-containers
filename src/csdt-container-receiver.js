@@ -72,23 +72,20 @@ AFRAME.registerComponent('csdt-container-receiver', {
 
         //when the parent site requests a render
         conn.onMessage(CSDT.messages.render, () => {
-          const el = this.el;
-          const sceneEl = el.sceneEl;
-          const renderer = sceneEl.renderer;
-          const camera = el.isInContainer === true ? sceneEl.camera : el.secondCam;
-
+          const renderer = el.sceneEl.renderer;
           const pos = el.camPos;
           const quat = el.camQuat;
 
           if (el.isInContainer === true) {
-            const player = el.player;
-            player.position.set(pos.x, player.position.y, pos.z);
+            el.player.position.set(pos.x, el.player.position.y, pos.z);
+            const group = el.sceneEl.camera.el.object3D;
+            group.children.forEach((child) => {
+              child.quaternion.set(quat.x, quat.y, quat.z, quat.w);
+            });
           } else {
-            const player = el.secondCam;
-            player.position.set(pos.x, pos.y, pos.z);
+            el.secondCam.position.set(pos.x, pos.y, pos.z);
+            el.secondCam.quaternion.set(quat.x, quat.y, quat.z, quat.w);
           }
-
-          camera.quaternion.set(quat.x, quat.y, quat.z, quat.w);
 
           this.renderScene();
 

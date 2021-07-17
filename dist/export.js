@@ -140,9 +140,9 @@
       this[globalName] = mainExports;
     }
   }
-})({"6l2IZ":[function(require,module,exports) {
+})({"2juj8":[function(require,module,exports) {
 var HMR_HOST = null;
-var HMR_PORT = 55453;
+var HMR_PORT = 62109;
 var HMR_SECURE = false;
 var HMR_ENV_HASH = "d751713988987e9331980363e24189ce";
 module.bundle.HMR_BUNDLE_ID = "dcd721b617217ecd3e90b74d2c08edc6";
@@ -17245,20 +17245,19 @@ AFRAME.registerComponent('csdt-container-receiver', {
       });
       // when the parent site requests a render
       conn.onMessage(_CSDTDistCSDT.CSDT.messages.render, () => {
-        const el = this.el;
-        const sceneEl = el.sceneEl;
-        const renderer = sceneEl.renderer;
-        const camera = el.isInContainer === true ? sceneEl.camera : el.secondCam;
+        const renderer = el.sceneEl.renderer;
         const pos = el.camPos;
         const quat = el.camQuat;
         if (el.isInContainer === true) {
-          const player = el.player;
-          player.position.set(pos.x, player.position.y, pos.z);
+          el.player.position.set(pos.x, el.player.position.y, pos.z);
+          const group = el.sceneEl.camera.el.object3D;
+          group.children.forEach(child => {
+            child.quaternion.set(quat.x, quat.y, quat.z, quat.w);
+          });
         } else {
-          const player = el.secondCam;
-          player.position.set(pos.x, pos.y, pos.z);
+          el.secondCam.position.set(pos.x, pos.y, pos.z);
+          el.secondCam.quaternion.set(quat.x, quat.y, quat.z, quat.w);
         }
-        camera.quaternion.set(quat.x, quat.y, quat.z, quat.w);
         this.renderScene();
         // get pixel data
         renderer.readRenderTargetPixels(el.renderTarget, 0, 0, el.canvasWidth, el.canvasHeight, el.pixels);
@@ -17483,6 +17482,6 @@ AFRAME.registerSystem('csdt-container-manager', {
   },
 });
 
-},{}]},["6l2IZ","556pz"], "556pz", "parcelRequireb2de")
+},{}]},["2juj8","556pz"], "556pz", "parcelRequireb2de")
 
 //# sourceMappingURL=export.js.map
