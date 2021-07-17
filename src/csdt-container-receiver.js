@@ -66,7 +66,10 @@ AFRAME.registerComponent('csdt-container-receiver', {
             if (c.has('cameraPosition')) el.camPos.fromArray(ymap.get('cameraPosition'));
             if (c.has('cameraQuaternion')) el.camQuat.fromArray(ymap.get('cameraQuaternion'));
 
-            if (c.has('isInContainer')) el.isInContainer = ymap.get('isInContainer');
+            if (c.has('isInContainer')) {
+              el.isInContainer = ymap.get('isInContainer');
+              el.player.visible = el.isInContainer;
+            }
           });
         });
 
