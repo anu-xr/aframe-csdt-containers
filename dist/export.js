@@ -542,7 +542,7 @@ AFRAME.registerComponent('csdt-container', {
         // receive pixel data
         el.conn.onMessage(_CSDTDistCSDT.CSDT.messages.pixel, data => {
           el.texture = new THREE.DataTexture(data, canvas.width, canvas.height, THREE.RGBAFormat, THREE.UnsignedByteType, THREE.UVMapping);
-        });
+        }, false, false);
       });
     }, true);
   },
