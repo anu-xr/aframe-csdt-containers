@@ -33,36 +33,15 @@ AFRAME.registerComponent('csdt-container-receiver', {
 
         //disable aframe's render loop
         //we sync our render with the parent site, rather than using a separate clock
-        el.sceneEl.renderer.setAnimationLoop(null);
+        renderer.setAnimationLoop(null);
 
         const ydoc = conn.ydoc;
         const ymap = ydoc.getMap(conn.hash);
-
-        el.canvasWidth = ymap.get('canvasWidth') ?? 0;
-        el.canvasHeight = ymap.get('canvasHeight') ?? 0;
-        el.pixels = new Uint8Array(el.canvasWidth * el.canvasHeight * 4);
-
-        el.renderTarget = new THREE.WebGLRenderTarget(el.canvasWidth, el.canvasHeight);
-        renderer.setRenderTarget(el.renderTarget);
 
         ymap.observe((e) => {
           const changed = e.transaction.changed;
           //update things based on ymap data changes
           changed.forEach((c) => {
-            if (c.has('canvasWidth') || c.has('canvasHeight')) {
-              el.canvasWidth = ymap.get('canvasWidth');
-              el.canvasHeight = ymap.get('canvasHeight');
-
-              el.renderTarget.setSize(el.canvasWidth, el.canvasHeight);
-              el.pixels = new Uint8Array(el.canvasWidth * el.canvasHeight * 4);
-
-              const cameras = [el.sceneEl.camera, el.secondCam];
-              cameras.forEach((camera) => {
-                camera.aspect = el.canvasWidth / el.canvasHeight;
-                camera.updateProjectionMatrix();
-              });
-            }
-
             if (c.has('cameraPosition')) el.camPos.fromArray(ymap.get('cameraPosition'));
             if (c.has('cameraQuaternion')) el.camQuat.fromArray(ymap.get('cameraQuaternion'));
 
@@ -75,7 +54,6 @@ AFRAME.registerComponent('csdt-container-receiver', {
 
         //when the parent site requests a render
         conn.onMessage(CSDT.messages.render, () => {
-          const renderer = el.sceneEl.renderer;
           const pos = el.camPos;
           const quat = el.camQuat;
 
@@ -92,12 +70,8 @@ AFRAME.registerComponent('csdt-container-receiver', {
 
           this.renderScene();
 
-          //get pixel data
-          renderer.readRenderTargetPixels(el.renderTarget, 0, 0, el.canvasWidth, el.canvasHeight, el.pixels);
-
-          //send pixel data to parent
-          //use an event rather than yjs to transfer data for performance reasons, el.pixels is very large
-          conn.sendMessage(CSDT.messages.pixel, el.pixels);
+          const ctx = renderer.getContext();
+          conn.sendMessage(CSDT.messages.context, ctx);
         });
 
         //when the parent requests a preview

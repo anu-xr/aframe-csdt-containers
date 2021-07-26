@@ -49,8 +49,6 @@ AFRAME.registerComponent('csdt-container', {
     }
 
     this.initializeIframe();
-
-    this.syncCanvasSize = AFRAME.utils.throttle(this.syncCanvasSize, 1000, this);
   },
 
   initializeIframe: function () {
@@ -84,18 +82,17 @@ AFRAME.registerComponent('csdt-container', {
             }
           }
 
-          //receive pixel data
           el.conn.onMessage(
-            CSDT.messages.pixel,
+            CSDT.messages.context,
             (data) => {
-              el.texture = new THREE.DataTexture(
-                data,
-                canvas.width,
-                canvas.height,
-                THREE.RGBAFormat,
-                THREE.UnsignedByteType,
-                THREE.UVMapping
-              );
+              if (!el.renderingPlane) {
+                el.texture = new THREE.CanvasTexture(data.canvas);
+                const geometry = new THREE.PlaneGeometry(canvas.width, canvas.height);
+                const material = new THREE.MeshBasicMaterial({ transparent: true, map: el.texture });
+                el.renderingPlane = new THREE.Mesh(geometry, material);
+              } else {
+                el.texture.needsUpdate = true;
+              }
             },
             false,
             false
@@ -113,20 +110,6 @@ AFRAME.registerComponent('csdt-container', {
     el.containerRadius = Math.sqrt(data.width ** 2 + data.depth ** 2) / 2;
   },
 
-  syncCanvasSize: function () {
-    const el = this.el;
-    const canvas = el.sceneEl.canvas;
-    const ydoc = el.conn.ydoc;
-    const ymap = el.ymap;
-
-    if (ymap.get('canvasWidth') === canvas.width && ymap.get('canvasHeight') === canvas.height) return;
-
-    ydoc.transact(() => {
-      ymap.set('canvasWidth', canvas.width);
-      ymap.set('canvasHeight', canvas.height);
-    });
-  },
-
   syncData: function () {
     const el = this.el;
     const data = this.data;
@@ -135,9 +118,6 @@ AFRAME.registerComponent('csdt-container', {
     const ymap = el.ymap;
 
     if (!ymap) return;
-
-    //sync canvas size
-    this.syncCanvasSize();
 
     //sync camera position
     el.camPos = camera.getWorldPosition(el.camPos);

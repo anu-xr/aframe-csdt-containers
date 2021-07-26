@@ -140,9 +140,9 @@
       this[globalName] = mainExports;
     }
   }
-})({"2LBt7":[function(require,module,exports) {
+})({"7eOzm":[function(require,module,exports) {
 var HMR_HOST = null;
-var HMR_PORT = 62291;
+var HMR_PORT = 57066;
 var HMR_SECURE = false;
 var HMR_ENV_HASH = "d751713988987e9331980363e24189ce";
 module.bundle.HMR_BUNDLE_ID = "dcd721b617217ecd3e90b74d2c08edc6";
@@ -514,7 +514,6 @@ AFRAME.registerComponent('csdt-container', {
       el.object3D.add(wireframe);
     }
     this.initializeIframe();
-    this.syncCanvasSize = AFRAME.utils.throttle(this.syncCanvasSize, 1000, this);
   },
   initializeIframe: function () {
     const el = this.el;
@@ -539,9 +538,18 @@ AFRAME.registerComponent('csdt-container', {
             });
           }
         }
-        // receive pixel data
-        el.conn.onMessage(_CSDTDistCSDT.CSDT.messages.pixel, data => {
-          el.texture = new THREE.DataTexture(data, canvas.width, canvas.height, THREE.RGBAFormat, THREE.UnsignedByteType, THREE.UVMapping);
+        el.conn.onMessage(_CSDTDistCSDT.CSDT.messages.context, data => {
+          if (!el.renderingPlane) {
+            el.texture = new THREE.CanvasTexture(data.canvas);
+            const geometry = new THREE.PlaneGeometry(canvas.width, canvas.height);
+            const material = new THREE.MeshBasicMaterial({
+              transparent: true,
+              map: el.texture
+            });
+            el.renderingPlane = new THREE.Mesh(geometry, material);
+          } else {
+            el.texture.needsUpdate = true;
+          }
         }, false, false);
       });
     }, true);
@@ -551,17 +559,6 @@ AFRAME.registerComponent('csdt-container', {
     const data = this.data;
     el.containerRadius = Math.sqrt(data.width ** 2 + data.depth ** 2) / 2;
   },
-  syncCanvasSize: function () {
-    const el = this.el;
-    const canvas = el.sceneEl.canvas;
-    const ydoc = el.conn.ydoc;
-    const ymap = el.ymap;
-    if (ymap.get('canvasWidth') === canvas.width && ymap.get('canvasHeight') === canvas.height) return;
-    ydoc.transact(() => {
-      ymap.set('canvasWidth', canvas.width);
-      ymap.set('canvasHeight', canvas.height);
-    });
-  },
   syncData: function () {
     const el = this.el;
     const data = this.data;
@@ -569,8 +566,6 @@ AFRAME.registerComponent('csdt-container', {
     const ydoc = el.conn.ydoc;
     const ymap = el.ymap;
     if (!ymap) return;
-    // sync canvas size
-    this.syncCanvasSize();
     // sync camera position
     el.camPos = camera.getWorldPosition(el.camPos);
     el.camQuat = camera.getWorldQuaternion(el.camQuat);
@@ -16925,14 +16920,17 @@ var define;
       return convertType;
     });
     function addIframe(url) {
+      const div = document.createElement('div');
+      div.style.overflow = 'hidden';
+      div.style.position = 'relative';
       const iframe = document.createElement('iframe');
       iframe.src = url;
-      iframe.style.display = 'none';
-      iframe.style.position = 'absolute';
-      iframe.style.width = '0';
-      iframe.style.height = '0';
-      iframe.style.border = '0';
-      document.body.appendChild(iframe);
+      iframe.style.position = 'fixed';
+      iframe.style.width = '100%';
+      iframe.style.height = '100%';
+      iframe.style.left = '100%';
+      div.appendChild(iframe);
+      document.body.appendChild(div);
       return iframe;
     }
     function convertType(data, type) {
@@ -17106,7 +17104,7 @@ _parcelHelpers.export(exports, "deepRemoveIds", function () {
 });
 var _CSDTDistCSDT = require('../CSDT/dist/CSDT');
 function createCustomMessages() {
-  _CSDTDistCSDT.CSDT.createMessage('pixel', 'container-pixel-data', 'uint8array', null);
+  _CSDTDistCSDT.CSDT.createMessage('context', 'container-rendering-context', undefined, null);
   _CSDTDistCSDT.CSDT.createMessage('preview', 'container-preview', null, 'uint8array');
   _CSDTDistCSDT.CSDT.createMessage('render', 'container-render', null, null);
 }
@@ -17223,29 +17221,13 @@ AFRAME.registerComponent('csdt-container-receiver', {
       el.classList.add(conn.hash);
       // disable aframe's render loop
       // we sync our render with the parent site, rather than using a separate clock
-      el.sceneEl.renderer.setAnimationLoop(null);
+      renderer.setAnimationLoop(null);
       const ydoc = conn.ydoc;
       const ymap = ydoc.getMap(conn.hash);
-      el.canvasWidth = ymap.get('canvasWidth') ?? 0;
-      el.canvasHeight = ymap.get('canvasHeight') ?? 0;
-      el.pixels = new Uint8Array(el.canvasWidth * el.canvasHeight * 4);
-      el.renderTarget = new THREE.WebGLRenderTarget(el.canvasWidth, el.canvasHeight);
-      renderer.setRenderTarget(el.renderTarget);
       ymap.observe(e => {
         const changed = e.transaction.changed;
         // update things based on ymap data changes
         changed.forEach(c => {
-          if (c.has('canvasWidth') || c.has('canvasHeight')) {
-            el.canvasWidth = ymap.get('canvasWidth');
-            el.canvasHeight = ymap.get('canvasHeight');
-            el.renderTarget.setSize(el.canvasWidth, el.canvasHeight);
-            el.pixels = new Uint8Array(el.canvasWidth * el.canvasHeight * 4);
-            const cameras = [el.sceneEl.camera, el.secondCam];
-            cameras.forEach(camera => {
-              camera.aspect = el.canvasWidth / el.canvasHeight;
-              camera.updateProjectionMatrix();
-            });
-          }
           if (c.has('cameraPosition')) el.camPos.fromArray(ymap.get('cameraPosition'));
           if (c.has('cameraQuaternion')) el.camQuat.fromArray(ymap.get('cameraQuaternion'));
           if (c.has('isInContainer')) {
@@ -17256,7 +17238,6 @@ AFRAME.registerComponent('csdt-container-receiver', {
       });
       // when the parent site requests a render
       conn.onMessage(_CSDTDistCSDT.CSDT.messages.render, () => {
-        const renderer = el.sceneEl.renderer;
         const pos = el.camPos;
         const quat = el.camQuat;
         if (el.isInContainer === true) {
@@ -17270,11 +17251,8 @@ AFRAME.registerComponent('csdt-container-receiver', {
           el.secondCam.quaternion.set(quat.x, quat.y, quat.z, quat.w);
         }
         this.renderScene();
-        // get pixel data
-        renderer.readRenderTargetPixels(el.renderTarget, 0, 0, el.canvasWidth, el.canvasHeight, el.pixels);
-        // send pixel data to parent
-        // use an event rather than yjs to transfer data for performance reasons, el.pixels is very large
-        conn.sendMessage(_CSDTDistCSDT.CSDT.messages.pixel, el.pixels);
+        const ctx = renderer.getContext();
+        conn.sendMessage(_CSDTDistCSDT.CSDT.messages.context, ctx);
       });
       // when the parent requests a preview
       conn.onMessage(_CSDTDistCSDT.CSDT.messages.preview, () => {
@@ -17318,10 +17296,6 @@ AFRAME.registerSystem('csdt-container-manager', {
 
     const width = 0;
     const height = 0;
-
-    const geometry = new THREE.PlaneGeometry(width, height);
-    const material = new THREE.MeshBasicMaterial({ transparent: true });
-    el.renderingPlane = new THREE.Mesh(geometry, material);
 
     el.orthoCamera = new THREE.OrthographicCamera(width / -2, width / 2, height / 2, height / -2, 1, 1000);
     el.orthoCamera.position.z = 5;
@@ -17404,13 +17378,8 @@ AFRAME.registerSystem('csdt-container-manager', {
 
     el.emit('tock');
 
-    if (el.renderingPlane.geometry.width !== width || el.renderingPlane.geometry.height !== height) {
-      el.renderingPlane.geometry.dispose();
-      el.renderingPlane.geometry = new THREE.PlaneGeometry(width, height);
-
-      el.orthoCamera = new THREE.OrthographicCamera(width / -2, width / 2, height / 2, height / -2, 1, 1000);
-      el.orthoCamera.position.z = 5;
-    }
+    el.orthoCamera = new THREE.OrthographicCamera(width / -2, width / 2, height / 2, height / -2, 1, 1000);
+    el.orthoCamera.position.z = 5;
 
     el.frustumMatrix.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
     el.frustum.setFromProjectionMatrix(el.frustumMatrix);
@@ -17424,7 +17393,7 @@ AFRAME.registerSystem('csdt-container-manager', {
     containers.sort((a, b) => b.distance - a.distance);
 
     const containerMeshes = new THREE.Group();
-    const textures = [];
+    const planes = [];
     const previews = [];
 
     containers.forEach((obj) => {
@@ -17452,7 +17421,7 @@ AFRAME.registerSystem('csdt-container-manager', {
 
       if (!obj.el.texture) return;
 
-      textures.push(obj.el.texture);
+      planes.push(obj.el.renderingPlane);
       containerMeshes.add(obj.el.containerMesh);
     });
 
@@ -17475,10 +17444,8 @@ AFRAME.registerSystem('csdt-container-manager', {
       renderer.render(obj, camera);
     });
 
-    textures.forEach((texture) => {
-      el.renderingPlane.material.map = texture;
-      renderer.render(el.renderingPlane, el.orthoCamera);
-      texture.dispose();
+    planes.forEach((plane) => {
+      renderer.render(plane, el.orthoCamera);
     });
 
     gl.stencilMask(0xff);
@@ -17486,6 +17453,6 @@ AFRAME.registerSystem('csdt-container-manager', {
   },
 });
 
-},{}]},["2LBt7","556pz"], "556pz", "parcelRequireb2de")
+},{}]},["7eOzm","556pz"], "556pz", "parcelRequireb2de")
 
 //# sourceMappingURL=export.js.map

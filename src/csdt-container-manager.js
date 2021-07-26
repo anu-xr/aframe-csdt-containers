@@ -12,10 +12,6 @@ AFRAME.registerSystem('csdt-container-manager', {
     const width = 0;
     const height = 0;
 
-    const geometry = new THREE.PlaneGeometry(width, height);
-    const material = new THREE.MeshBasicMaterial({ transparent: true });
-    el.renderingPlane = new THREE.Mesh(geometry, material);
-
     el.orthoCamera = new THREE.OrthographicCamera(width / -2, width / 2, height / 2, height / -2, 1, 1000);
     el.orthoCamera.position.z = 5;
 
@@ -97,13 +93,8 @@ AFRAME.registerSystem('csdt-container-manager', {
 
     el.emit('tock');
 
-    if (el.renderingPlane.geometry.width !== width || el.renderingPlane.geometry.height !== height) {
-      el.renderingPlane.geometry.dispose();
-      el.renderingPlane.geometry = new THREE.PlaneGeometry(width, height);
-
-      el.orthoCamera = new THREE.OrthographicCamera(width / -2, width / 2, height / 2, height / -2, 1, 1000);
-      el.orthoCamera.position.z = 5;
-    }
+    el.orthoCamera = new THREE.OrthographicCamera(width / -2, width / 2, height / 2, height / -2, 1, 1000);
+    el.orthoCamera.position.z = 5;
 
     el.frustumMatrix.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
     el.frustum.setFromProjectionMatrix(el.frustumMatrix);
@@ -117,7 +108,7 @@ AFRAME.registerSystem('csdt-container-manager', {
     containers.sort((a, b) => b.distance - a.distance);
 
     const containerMeshes = new THREE.Group();
-    const textures = [];
+    const planes = [];
     const previews = [];
 
     containers.forEach((obj) => {
@@ -145,7 +136,7 @@ AFRAME.registerSystem('csdt-container-manager', {
 
       if (!obj.el.texture) return;
 
-      textures.push(obj.el.texture);
+      planes.push(obj.el.renderingPlane);
       containerMeshes.add(obj.el.containerMesh);
     });
 
@@ -168,10 +159,8 @@ AFRAME.registerSystem('csdt-container-manager', {
       renderer.render(obj, camera);
     });
 
-    textures.forEach((texture) => {
-      el.renderingPlane.material.map = texture;
-      renderer.render(el.renderingPlane, el.orthoCamera);
-      texture.dispose();
+    planes.forEach((plane) => {
+      renderer.render(plane, el.orthoCamera);
     });
 
     gl.stencilMask(0xff);
