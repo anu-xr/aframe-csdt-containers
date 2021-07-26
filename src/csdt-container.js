@@ -56,6 +56,7 @@ AFRAME.registerComponent('csdt-container', {
   initializeIframe: function () {
     const el = this.el;
     const data = this.data;
+    const canvas = el.sceneEl.canvas;
 
     el.conn = CSDT.openConnection(data.href, el.connectionId);
 
@@ -85,9 +86,16 @@ AFRAME.registerComponent('csdt-container', {
 
           //receive pixel data
           el.conn.onMessage(CSDT.messages.pixel, (data) => {
-            el.pixels = data;
+            el.texture = new THREE.DataTexture(
+              data,
+              canvas.width,
+              canvas.height,
+              THREE.RGBAFormat,
+              THREE.UnsignedByteType,
+              THREE.UVMapping
+            );
           });
-        }, 0);
+        });
       },
       true
     );
@@ -108,12 +116,9 @@ AFRAME.registerComponent('csdt-container', {
 
     if (ymap.get('canvasWidth') === canvas.width && ymap.get('canvasHeight') === canvas.height) return;
 
-    const width = canvas.width;
-    const height = canvas.height;
-
     ydoc.transact(() => {
-      ymap.set('canvasWidth', width);
-      ymap.set('canvasHeight', height);
+      ymap.set('canvasWidth', canvas.width);
+      ymap.set('canvasHeight', canvas.height);
     });
   },
 

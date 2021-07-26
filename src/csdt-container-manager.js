@@ -143,17 +143,9 @@ AFRAME.registerSystem('csdt-container-manager', {
         obj.el.components['csdt-container'].syncData();
       }
 
-      //read pixel data from child site
-      const texture = new THREE.DataTexture(
-        obj.el.pixels,
-        width,
-        height,
-        THREE.RGBAFormat,
-        THREE.UnsignedByteType,
-        THREE.UVMapping
-      );
+      if (!obj.el.texture) return;
 
-      textures.push(texture);
+      textures.push(obj.el.texture);
       containerMeshes.add(obj.el.containerMesh);
     });
 
