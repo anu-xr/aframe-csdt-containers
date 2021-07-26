@@ -49,13 +49,12 @@ AFRAME.registerComponent('csdt-container', {
     }
 
     this.initializeIframe();
-
-    this.syncCanvasSize = AFRAME.utils.throttle(this.syncCanvasSize, 1000, this);
   },
 
   initializeIframe: function () {
     const el = this.el;
     const data = this.data;
+    const canvas = el.sceneEl.canvas;
 
     el.conn = CSDT.openConnection(data.href, el.connectionId);
 
@@ -83,11 +82,22 @@ AFRAME.registerComponent('csdt-container', {
             }
           }
 
-          //receive pixel data
-          el.conn.onMessage(CSDT.messages.pixel, (data) => {
-            el.pixels = data;
-          });
-        }, 0);
+          el.conn.onMessage(
+            CSDT.messages.context,
+            (data) => {
+              if (!el.renderingPlane) {
+                el.texture = new THREE.CanvasTexture(data.canvas);
+                const geometry = new THREE.PlaneGeometry(canvas.width, canvas.height);
+                const material = new THREE.MeshBasicMaterial({ transparent: true, map: el.texture });
+                el.renderingPlane = new THREE.Mesh(geometry, material);
+              } else {
+                el.texture.needsUpdate = true;
+              }
+            },
+            false,
+            false
+          );
+        });
       },
       true
     );
@@ -100,23 +110,6 @@ AFRAME.registerComponent('csdt-container', {
     el.containerRadius = Math.sqrt(data.width ** 2 + data.depth ** 2) / 2;
   },
 
-  syncCanvasSize: function () {
-    const el = this.el;
-    const canvas = el.sceneEl.canvas;
-    const ydoc = el.conn.ydoc;
-    const ymap = el.ymap;
-
-    if (ymap.get('canvasWidth') === canvas.width && ymap.get('canvasHeight') === canvas.height) return;
-
-    const width = canvas.width;
-    const height = canvas.height;
-
-    ydoc.transact(() => {
-      ymap.set('canvasWidth', width);
-      ymap.set('canvasHeight', height);
-    });
-  },
-
   syncData: function () {
     const el = this.el;
     const data = this.data;
@@ -125,9 +118,6 @@ AFRAME.registerComponent('csdt-container', {
     const ymap = el.ymap;
 
     if (!ymap) return;
-
-    //sync canvas size
-    this.syncCanvasSize();
 
     //sync camera position
     el.camPos = camera.getWorldPosition(el.camPos);

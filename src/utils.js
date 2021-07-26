@@ -1,7 +1,7 @@
 import { CSDT } from '../CSDT/dist/CSDT';
 
 export function createCustomMessages() {
-  CSDT.createMessage('pixel', 'container-pixel-data', 'uint8array', null);
+  CSDT.createMessage('context', 'container-rendering-context', undefined, null);
   CSDT.createMessage('preview', 'container-preview', null, 'uint8array');
   CSDT.createMessage('render', 'container-render', null, null);
 }
