@@ -140,9 +140,9 @@
       this[globalName] = mainExports;
     }
   }
-})({"7eOzm":[function(require,module,exports) {
+})({"1VBZM":[function(require,module,exports) {
 var HMR_HOST = null;
-var HMR_PORT = 57066;
+var HMR_PORT = 57829;
 var HMR_SECURE = false;
 var HMR_ENV_HASH = "d751713988987e9331980363e24189ce";
 module.bundle.HMR_BUNDLE_ID = "dcd721b617217ecd3e90b74d2c08edc6";
@@ -466,9 +466,6 @@ AFRAME.registerComponent('csdt-container', {
     enableExternalRendering: {
       default: true
     },
-    enableFrameSkips: {
-      default: true
-    },
     enableInteraction: {
       default: true
     },
@@ -484,7 +481,6 @@ AFRAME.registerComponent('csdt-container', {
     const data = this.data;
     _utils.createCustomMessages();
     el.frames = 0;
-    el.frameSkips = 1;
     el.has_iframe_loaded = false;
     el.camPos = new THREE.Vector3();
     el.camQuat = new THREE.Quaternion();
@@ -571,13 +567,6 @@ AFRAME.registerComponent('csdt-container', {
     el.camQuat = camera.getWorldQuaternion(el.camQuat);
     el.containerPos = el.object3D.getWorldPosition(el.containerPos);
     el.containerPos.y -= data.height / 2;
-    // change frameSkips based on distance to camera
-    if (data.enableFrameSkips == true) {
-      const distance = el.camPos.distanceTo(el.containerPos);
-      const minFrameSkips = 1;
-      const maxFrameSkips = 2;
-      el.frameSkips = Math.min(Math.max(Math.floor(distance / (el.containerRadius * 2)), minFrameSkips), maxFrameSkips);
-    }
     const isInContainer = el.sceneEl.systems['csdt-container-manager'].isInContainer({
       el
     });
@@ -693,9 +682,9 @@ var define;
     }
   }
 })({
-  "4yPBQ": [function (require, module, exports) {
+  "ERrds": [function (require, module, exports) {
     var HMR_HOST = null;
-    var HMR_PORT = 63576;
+    var HMR_PORT = 51336;
     var HMR_SECURE = false;
     var HMR_ENV_HASH = "d751713988987e9331980363e24189ce";
     module.bundle.HMR_BUNDLE_ID = "9efd05a65559a3255aae87197b5561fd";
@@ -17085,7 +17074,7 @@ var define;
     "./constants": "5vBc0",
     "@parcel/transformer-js/lib/esmodule-helpers.js": "2tbvz"
   }]
-}, ["4yPBQ", "2pld4"], "2pld4", "parcelRequirecf62");
+}, ["ERrds", "2pld4"], "2pld4", "parcelRequirecf62");
 
 },{}],"3EQWo":[function(require,module,exports) {
 var _parcelHelpers = require("@parcel/transformer-js/lib/esmodule-helpers.js");
@@ -17415,11 +17404,9 @@ AFRAME.registerSystem('csdt-container-manager', {
         if (!obj.el.iframe) obj.el.initializeIframe();
       }
 
-      if (++obj.el.frames % obj.el.frameSkips === 0) {
-        obj.el.components['csdt-container'].syncData();
-      }
+      obj.el.components['csdt-container'].syncData();
 
-      if (!obj.el.texture) return;
+      if (!obj.el.renderingPlane) return;
 
       planes.push(obj.el.renderingPlane);
       containerMeshes.add(obj.el.containerMesh);
@@ -17453,6 +17440,6 @@ AFRAME.registerSystem('csdt-container-manager', {
   },
 });
 
-},{}]},["7eOzm","556pz"], "556pz", "parcelRequireb2de")
+},{}]},["1VBZM","556pz"], "556pz", "parcelRequireb2de")
 
 //# sourceMappingURL=export.js.map

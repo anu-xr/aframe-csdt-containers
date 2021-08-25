@@ -130,11 +130,9 @@ AFRAME.registerSystem('csdt-container-manager', {
         if (!obj.el.iframe) obj.el.initializeIframe();
       }
 
-      if (++obj.el.frames % obj.el.frameSkips === 0) {
-        obj.el.components['csdt-container'].syncData();
-      }
+      obj.el.components['csdt-container'].syncData();
 
-      if (!obj.el.texture) return;
+      if (!obj.el.renderingPlane) return;
 
       planes.push(obj.el.renderingPlane);
       containerMeshes.add(obj.el.containerMesh);

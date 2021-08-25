@@ -5,18 +5,15 @@
     <title>Example</title>
     <script src="https://unpkg.com/aframe@1.2.0/dist/aframe-master.js"></script>
     <script src="./aframe-extras.controls.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/poeticAndroid/a-game@v0.18.0/dist/a-game.min.js"></script>
 
     <script src="../dist/export.js"></script>
   </head>
 
   <body>
-    <a-scene stats>
+    <a-scene physics>
       <!--Camera-->
-      <a-entity id="player" position="0 0 3" movement-controls="speed: 0.1">
-        <a-entity position="0 1.6 0" camera look-controls="pointerLockEnabled: false"></a-entity>
-        <a-entity hand-controls="hand: left"></a-entity>
-        <a-entity hand-controls="hand: right"></a-entity>
-      </a-entity>
+      <a-player position="0 0 3" locomotion="speed: 3"></a-player>
 
       <!--Container-->
       <a-entity
@@ -27,7 +24,7 @@
 
       <!--Environment-->
       <a-sky color="#25a"></a-sky>
-      <a-plane rotation="-90 0 0" width="16" height="16" color="#3fa841"></a-plane>
+      <a-plane floor rotation="-90 0 0" width="32" height="32" color="#3fa841"></a-plane>
       <a-box position="0 2.5 -8" width="16" height="5" depth=".25" color="#a8413f"></a-box>
     </a-scene>
 

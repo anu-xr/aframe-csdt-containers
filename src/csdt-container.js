@@ -8,7 +8,6 @@ AFRAME.registerComponent('csdt-container', {
     height: { default: 8 },
     depth: { default: 8 },
     enableExternalRendering: { default: true },
-    enableFrameSkips: { default: true },
     enableInteraction: { default: true },
     enablePreview: { default: true },
     enableWireframe: { default: true },
@@ -21,7 +20,6 @@ AFRAME.registerComponent('csdt-container', {
     createCustomMessages();
 
     el.frames = 0;
-    el.frameSkips = 1;
     el.has_iframe_loaded = false;
     el.camPos = new THREE.Vector3();
     el.camQuat = new THREE.Quaternion();
@@ -125,16 +123,6 @@ AFRAME.registerComponent('csdt-container', {
 
     el.containerPos = el.object3D.getWorldPosition(el.containerPos);
     el.containerPos.y -= data.height / 2;
-
-    //change frameSkips based on distance to camera
-    if (data.enableFrameSkips == true) {
-      const distance = el.camPos.distanceTo(el.containerPos);
-
-      const minFrameSkips = 1;
-      const maxFrameSkips = 2;
-
-      el.frameSkips = Math.min(Math.max(Math.floor(distance / (el.containerRadius * 2)), minFrameSkips), maxFrameSkips);
-    }
 
     const isInContainer = el.sceneEl.systems['csdt-container-manager'].isInContainer({ el });
     if (ymap.get('isInContainer') !== isInContainer) {
