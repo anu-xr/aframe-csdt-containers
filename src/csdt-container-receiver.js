@@ -73,12 +73,6 @@ AFRAME.registerComponent('csdt-container-receiver', {
           const ctx = renderer.getContext();
           conn.sendMessage(CSDT.messages.context, ctx);
         });
-
-        //when the parent requests a preview
-        conn.onMessage(CSDT.messages.preview, () => {
-          const scene = el.sceneEl.object3D;
-          conn.sendResponse(CSDT.messages.preview, JSON.stringify(scene.toJSON()));
-        });
       },
       true
     );

@@ -109,7 +109,6 @@ AFRAME.registerSystem('csdt-container-manager', {
 
     const containerMeshes = new THREE.Group();
     const planes = [];
-    const previews = [];
 
     containers.forEach((obj) => {
       if (!obj.el) return;
@@ -118,14 +117,6 @@ AFRAME.registerSystem('csdt-container-manager', {
 
       if (obj.data.enableExternalRendering === false) {
         const isInContainer = this.isInContainer(obj);
-
-        if (isInContainer === false) {
-          if (!obj.el.previewObj) return;
-
-          previews.push(obj.el.previewObj);
-          containerMeshes.add(obj.el.containerMesh);
-          return;
-        }
 
         if (!obj.el.iframe) obj.el.initializeIframe();
       }
@@ -152,10 +143,6 @@ AFRAME.registerSystem('csdt-container-manager', {
     renderer.clearDepth();
     gl.stencilFunc(gl.EQUAL, 1, 0xff);
     gl.stencilMask(0x00);
-
-    previews.forEach((obj) => {
-      renderer.render(obj, camera);
-    });
 
     planes.forEach((plane) => {
       renderer.render(plane, el.orthoCamera);

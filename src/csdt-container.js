@@ -9,7 +9,6 @@ AFRAME.registerComponent('csdt-container', {
     depth: { default: 8 },
     enableExternalRendering: { default: true },
     enableInteraction: { default: true },
-    enablePreview: { default: true },
     enableWireframe: { default: true },
   },
 
@@ -63,22 +62,6 @@ AFRAME.registerComponent('csdt-container', {
         setTimeout(() => {
           const ydoc = el.conn.ydoc;
           el.ymap = ydoc.getMap(el.conn.hash);
-
-          //load a preview
-          if (data.enablePreview === true) {
-            if (data.enableExternalRendering === false) {
-              el.conn.sendMessageWithResponse(CSDT.messages.preview).then((data) => {
-                const loader = new THREE.ObjectLoader();
-
-                loader.parse(JSON.parse(data), (obj) => {
-                  obj.position.y -= data.height / 2;
-                  obj.position.add(el.object3D.getWorldPosition(new THREE.Vector3()));
-
-                  el.previewObj = obj;
-                });
-              });
-            }
-          }
 
           el.conn.onMessage(
             CSDT.messages.context,

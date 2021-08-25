@@ -469,9 +469,6 @@ AFRAME.registerComponent('csdt-container', {
     enableInteraction: {
       default: true
     },
-    enablePreview: {
-      default: true
-    },
     enableWireframe: {
       default: true
     }
@@ -521,19 +518,6 @@ AFRAME.registerComponent('csdt-container', {
       setTimeout(() => {
         const ydoc = el.conn.ydoc;
         el.ymap = ydoc.getMap(el.conn.hash);
-        // load a preview
-        if (data.enablePreview === true) {
-          if (data.enableExternalRendering === false) {
-            el.conn.sendMessageWithResponse(_CSDTDistCSDT.CSDT.messages.preview).then(data => {
-              const loader = new THREE.ObjectLoader();
-              loader.parse(JSON.parse(data), obj => {
-                obj.position.y -= data.height / 2;
-                obj.position.add(el.object3D.getWorldPosition(new THREE.Vector3()));
-                el.previewObj = obj;
-              });
-            });
-          }
-        }
         el.conn.onMessage(_CSDTDistCSDT.CSDT.messages.context, data => {
           if (!el.renderingPlane) {
             el.texture = new THREE.CanvasTexture(data.canvas);
@@ -17243,11 +17227,6 @@ AFRAME.registerComponent('csdt-container-receiver', {
         const ctx = renderer.getContext();
         conn.sendMessage(_CSDTDistCSDT.CSDT.messages.context, ctx);
       });
-      // when the parent requests a preview
-      conn.onMessage(_CSDTDistCSDT.CSDT.messages.preview, () => {
-        const scene = el.sceneEl.object3D;
-        conn.sendResponse(_CSDTDistCSDT.CSDT.messages.preview, JSON.stringify(scene.toJSON()));
-      });
     }, true);
   },
   // modified from https://github.com/aframevr/aframe/blob/b164623dfa0d2548158f4b7da06157497cd4ea29/src/core/scene/a-scene.js#L782
@@ -17383,7 +17362,6 @@ AFRAME.registerSystem('csdt-container-manager', {
 
     const containerMeshes = new THREE.Group();
     const planes = [];
-    const previews = [];
 
     containers.forEach((obj) => {
       if (!obj.el) return;
@@ -17392,14 +17370,6 @@ AFRAME.registerSystem('csdt-container-manager', {
 
       if (obj.data.enableExternalRendering === false) {
         const isInContainer = this.isInContainer(obj);
-
-        if (isInContainer === false) {
-          if (!obj.el.previewObj) return;
-
-          previews.push(obj.el.previewObj);
-          containerMeshes.add(obj.el.containerMesh);
-          return;
-        }
 
         if (!obj.el.iframe) obj.el.initializeIframe();
       }
@@ -17426,10 +17396,6 @@ AFRAME.registerSystem('csdt-container-manager', {
     renderer.clearDepth();
     gl.stencilFunc(gl.EQUAL, 1, 0xff);
     gl.stencilMask(0x00);
-
-    previews.forEach((obj) => {
-      renderer.render(obj, camera);
-    });
 
     planes.forEach((plane) => {
       renderer.render(plane, el.orthoCamera);
